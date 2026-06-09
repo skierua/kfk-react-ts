@@ -1,0 +1,112 @@
+/* .rates-table-row {
+} */
+
+.rates-table-cell-amnt {
+  background-color: #f2f2f2;
+}
+
+.main-area-container {
+  width: 100%;
+  /* display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0; */
+}
+
+/* board */
+.main-area-box {
+  width: 100%;
+  /* display: flex;
+  flex-direction: column;
+  gap: 2px; */
+  padding: 10px 5px;
+  /* background-color: beige; */
+  /* background-color: #121212ee; */
+  background-color: #ffffffcc;
+  /* background-color: #3f4f56d8; */
+  border-radius: 10px;
+}
+
+.main-socials-container {
+  height: 85px;
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  border: solid dimgrey 1px;
+  border-radius: 10px;
+  padding: 5px;
+}
+
+.layout-footer {
+  background-color: #424242; /* grey[800]; */
+  color: #eeeeee; /* grey[200]; */
+  font-size: 75%;
+  padding: 10px;
+
+  /* width: 100%; */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* gap: 2px; */
+  padding: 10px;
+}
+
+.adm-dash-container {
+  /* width: 100%; */
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid lightgrey;
+  border-radius: 15px;
+  justify-items: center;
+  padding: 10px;
+  background: whitesmoke;
+}
+.adm-dash-container-title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid lightgrey;
+}
+
+.adm-dash-container-title {
+  /* width: 100%; */
+  /* text-align: left; */
+  /* border-bottom: 1px solid lightgrey; */
+  font-weight: bold;
+  /* background-color: aquamarine; */
+  /* bgcolor: info.dark, */
+  /* // color: 'info.contrastText', */
+  /* // padding: '5px 0px', */
+}
+.adm-dash-container-title-tm {
+  font-weight: normal;
+  font-size: 0.8rem;
+}
+
+.brd-dash-container {
+  /* width: 100%; */
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  /* border: 1px solid lightgrey; */
+  /* border-radius: 15px; */
+  justify-items: center;
+  padding: 10px;
+  /* background: whitesmoke; */
+}
+.brd-dash-container-title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid lightgrey;
+}
+
+.brd-dash-container-title {
+  font-weight: bold;
+}
+.brd-dash-container-title-tm {
+  font-weight: normal;
+  font-size: 0.8rem;
+}

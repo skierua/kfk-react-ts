@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="33mm"
+   height="22mm"
+   viewBox="0 0 33 22"
+   version="1.1"
+   id="svg141401"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="756.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview141403"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="5.1241864"
+     inkscape:cx="78.549055"
+     inkscape:cy="52.105833"
+     inkscape:window-width="1920"
+     inkscape:window-height="1171"
+     inkscape:window-x="1366"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     inkscape:showpageshadow="2"
+     inkscape:deskcolor="#d1d1d1" />
+  <defs
+     id="defs141398" />
+  <g
+     inkscape:label="Шар 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-38.568846,-95.159944)">
+    <g
+       id="g30367"
+       transform="translate(0.05972727,-0.20704532)">
+      <rect
+         style="fill:none;stroke-width:1.04801"
+         id="rect29843"
+         width="33"
+         height="22"
+         x="38.53965"
+         y="95.405365"
+         rx="2.7651286e-17" />
+      <g
+         id="g141294"
+         transform="translate(-22.668547,-2.008794)">
+        <g
+           id="g141288">
+          <rect
+             style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+             id="rect133141"
+             width="22"
+             height="22"
+             x="66.708199"
+             y="97.414154" />
+          <rect
+             style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+             id="rect140886"
+             width="4.1999998"
+             height="14"
+             x="75.6082"
+             y="101.41415" />
+          <rect
+             style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+             id="rect140886-9"
+             width="4.1999998"
+             height="14"
+             x="106.31416"
+             y="-84.708199"
+             transform="rotate(90)" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

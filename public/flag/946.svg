@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="33mm"
+   height="22mm"
+   viewBox="0 0 33 22"
+   version="1.1"
+   id="svg56251"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   sodipodi:docname="946.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview56253"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.64052329"
+     inkscape:cx="249.01515"
+     inkscape:cy="165.48969"
+     inkscape:window-width="1920"
+     inkscape:window-height="1135"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs56248" />
+  <g
+     inkscape:label="Шар 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-39.264951,-104.66064)">
+    <g
+       id="g56146"
+       transform="translate(-27.103175,-48.444571)">
+      <rect
+         style="fill:#002b7f;fill-opacity:1;stroke-width:0"
+         id="rect33124"
+         width="11"
+         height="22"
+         x="66.368126"
+         y="153.10521" />
+      <rect
+         style="fill:#fcd116;fill-opacity:1;stroke-width:0"
+         id="rect33124-3"
+         width="11"
+         height="22"
+         x="77.368126"
+         y="153.10521" />
+      <rect
+         style="fill:#ce1126;fill-opacity:1;stroke-width:0"
+         id="rect33124-5"
+         width="11"
+         height="22"
+         x="88.368126"
+         y="153.10521" />
+    </g>
+  </g>
+</svg>

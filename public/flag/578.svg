@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="33mm"
+   height="22mm"
+   viewBox="0 0 33 22"
+   version="1.1"
+   id="svg18726"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   sodipodi:docname="578.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview18728"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.64052329"
+     inkscape:cx="217.79068"
+     inkscape:cy="64.010163"
+     inkscape:window-width="1920"
+     inkscape:window-height="1135"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs18723" />
+  <g
+     inkscape:label="Шар 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-47.526426,-131.51043)">
+    <g
+       id="g18697"
+       transform="translate(-9.832049,81.281938)">
+      <rect
+         style="fill:#ef2b2d;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.265;stroke-miterlimit:4;stroke-dasharray:none"
+         id="rect31-6"
+         width="33"
+         height="22"
+         x="57.358475"
+         y="50.228493" />
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0"
+         id="rect11733"
+         width="6"
+         height="22"
+         x="66.400002"
+         y="50.228493" />
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0"
+         id="rect11733-6"
+         width="6"
+         height="33"
+         x="-64.228493"
+         y="57.358475"
+         transform="rotate(-90)" />
+      <rect
+         style="fill:#002868;fill-opacity:1;stroke-width:0"
+         id="rect11944"
+         width="33"
+         height="3"
+         x="57.358475"
+         y="59.815994" />
+      <rect
+         style="fill:#002868;fill-opacity:1;stroke-width:0"
+         id="rect11944-7"
+         width="22"
+         height="3"
+         x="-72.228493"
+         y="67.987503"
+         transform="rotate(-90)" />
+    </g>
+  </g>
+</svg>
