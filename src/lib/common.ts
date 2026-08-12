@@ -4,6 +4,57 @@ export function humanDate(vdate: string | undefined): string {
   const vcd = new Date(vdate);
   if (isNaN(vcd.getTime())) return vdate;
 
+  const now = new Date();
+
+  // Створюємо чисті календарні дати (без часу) для порівняння днів
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const itemDate = new Date(vcd.getFullYear(), vcd.getMonth(), vcd.getDate());
+
+  // Найнадійніший спосіб вирахувати різницю в календарних днях (без багів з переходом на літній/зимовий час та таймзон)
+  const diffTime = today.getTime() - itemDate.getTime();
+  const diffDays = Math.trunc(diffTime / (1000 * 60 * 60 * 24));
+
+  // Отримуємо локальний час у форматі "HH:MM"
+  const timeStr = vcd.toLocaleTimeString('uk-UA', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  // 1. Сьогодні
+  if (diffDays === 0) {
+    return timeStr;
+  }
+
+  // console.info(vdate, timeStr);
+
+  // 2. Вчора
+  if (diffDays === 1) {
+    return `Вч ${timeStr}`;
+  }
+
+  // 3. Протягом останнього тижня (2 - 6 днів тому)
+  if (diffDays > 1 && diffDays < 7) {
+    const dayName = vcd.toLocaleDateString('uk-UA', { weekday: 'short' });
+    const capitalizedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+    return `${capitalizedDay.replace('.', '')} ${timeStr}`; // Прибираємо крапку після дня тижня, якщо є
+  }
+
+  // 4. Більше тижня тому
+  const isSameYear = now.getFullYear() === vcd.getFullYear();
+  const options: Intl.DateTimeFormatOptions = isSameYear
+    ? { day: 'numeric', month: 'short' }
+    : { day: 'numeric', month: 'short', year: 'numeric' };
+
+  // Повертаємо локальну дату ("28 лип" або "28 лип 2025")
+  return vcd.toLocaleDateString('uk-UA', options).replace('.', '');
+}
+
+export function old_humanDate(vdate: string | undefined): string {
+  if (!vdate) return '';
+
+  const vcd = new Date(vdate);
+  if (isNaN(vcd.getTime())) return vdate;
+
   // Створюємо об'єкти лише для дат (без часу) для точного порівняння днів
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

@@ -8,12 +8,14 @@ import { RateWrapper, Rate4Element } from '../share/Rate';
 // import { RateTable } from '../share/RateTable';
 
 import { useDataStore } from '../store/useDataStore';
+import type { DbRateType } from '../store/DbTypes';
 import { APP_CONFIG } from '../const';
 import { ratesDataset, maxTime } from '../lib/rates';
 import { humanDate } from '../lib/common';
 
 export const RateView = ({ ...other }: BoxProps) => {
   const rawRates = useDataStore((state) => state.rates);
+  // console.info('RateView render', rawRates);
   const bulk2Dataset = useMemo(() => {
     return ratesDataset({
       data: rawRates,
@@ -39,8 +41,14 @@ export const RateView = ({ ...other }: BoxProps) => {
   }, [bulk6Dataset]);
 
   const kant2Dataset = useMemo(() => {
+    const dataset = rawRates.map((v): DbRateType => {
+      return {
+        ...v,
+        sname: '',
+      };
+    });
     return ratesDataset({
-      data: rawRates,
+      data: dataset,
       kantFilter: APP_CONFIG.KANT,
       typeFilter: 2,
     });
