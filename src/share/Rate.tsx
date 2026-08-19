@@ -266,7 +266,7 @@ export const RateTable = (props: RateTableProps) => {
             return (
               (Number(v.bid) !== 0 || Number(v.ask) !== 0) && (
                 <RateRow
-                  className="rates-table-row"
+                  // className="rates-table-row"
                   id={`${v.shop}-${v.atclcode}-${v.scode}`}
                   key={`${v.shop}-${v.atclcode}-${v.scode}`}
                   // sub={showCSub}
@@ -372,6 +372,7 @@ export const RateRow = ({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          padding: '8px 4px',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -406,7 +407,7 @@ const RateCell = ({ amnt, ...other }: { amnt: number } & TableCellProps) => {
     <TableCell
       align="center"
       sx={{
-        padding: { xs: '0', sm: '4px 8px' },
+        padding: { xs: '0', sm: '8px 4px' },
         width: { xs: '25%', sm: '80px' },
       }}
       // width="30%"

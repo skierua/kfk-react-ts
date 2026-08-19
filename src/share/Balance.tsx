@@ -40,6 +40,7 @@ interface BalanceRowType {
 }
 
 const transformBalanceForTable = (data: DbBalanceType[]): BalanceRowType[] => {
+  const { lastShift } = useUserStore();
   const groups: { [key: string]: BalanceRowType } = {};
   data
     .map((v): DbBalanceType => {
@@ -66,8 +67,10 @@ const transformBalanceForTable = (data: DbBalanceType[]): BalanceRowType[] => {
         };
       }
       groups[key].totalAmount += v.amnt;
-      groups[key].income += v.turndbt;
-      groups[key].outcome += v.turncdt;
+      if (v.tm.startsWith(lastShift)) {
+        groups[key].income += v.turndbt;
+        groups[key].outcome += v.turncdt;
+      }
       if (v.tm > groups[key].maxTime) groups[key].maxTime = v.tm;
       groups[key].details.push(v);
     });
@@ -198,7 +201,7 @@ const BalanceRow = ({ row }: { row: BalanceRowType }) => {
           '&:last-child td, &:last-child th': { border: 0 },
           bgcolor: open ? 'action.hover' : 'inherit',
           '& .MuiTableCell-root': {
-            padding: '4px 8px',
+            padding: '8px 4px',
           },
         }}
       >
@@ -277,7 +280,7 @@ const BalanceRow = ({ row }: { row: BalanceRowType }) => {
                       '& .MuiTableCell-root': {
                         //   color: hue(detail.tm, shft),
                         fontSize: '90%',
-                        padding: '4px 8px',
+                        padding: '8px 4px',
                       },
                     }}
                   >
