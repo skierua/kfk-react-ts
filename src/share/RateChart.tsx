@@ -28,10 +28,12 @@ import type { DbArchRateType } from '../store/DbTypes';
 interface RateChartPropsType extends React.ComponentPropsWithoutRef<
   typeof Box
 > {
+  chartPrefHeight?: number;
   cur?: string;
   period?: Date;
   showFilter?: boolean;
   showTable?: boolean;
+  style?: React.CSSProperties;
 }
 
 interface CharDataType {
@@ -43,10 +45,12 @@ interface CharDataType {
 }
 
 export const RateChart = ({
+  chartPrefHeight = 250,
   cur,
   period,
   showFilter,
   showTable,
+  style,
   ...other
 }: RateChartPropsType) => {
   const [fltcur, setFltcur] = useState<string>(cur ?? '840'); // currency filter
@@ -85,7 +89,7 @@ export const RateChart = ({
   }, [fltprd, fltcur]);
 
   return (
-    <Box {...other}>
+    <Box {...other} style={style}>
       {/* <React.Fragment {...other}> */}
       <CssBaseline />
       {/* <Container maxWidth="sm"> */}
@@ -128,7 +132,7 @@ export const RateChart = ({
       )}
       <LineChart
         // width="100%"
-        height={250}
+        height={chartPrefHeight}
         series={
           (showTable ?? true)
             ? [
