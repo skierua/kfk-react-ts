@@ -30,6 +30,7 @@ async function postData<T>(path: string, data: string): Promise<T> {
   const token = useUserStore.getState().token;
   const showNotification = useUserStore.getState().showNotification;
   const url = `${serverUrl}${apiUrl}${path}`;
+  // const url = `${serverUrl}${apiUrl}${path}?api_token=${encodeURIComponent(token ?? '')}`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -41,8 +42,9 @@ async function postData<T>(path: string, data: string): Promise<T> {
 
   try {
     const response = await fetch(url, {
-      method: 'post',
+      method: 'POST',
       mode: 'cors',
+      // credentials: 'include', // КРИТИЧНО ДЛЯ SAFARI при Allow-Credentials: true
       headers,
       body: 'data=' + encodeURIComponent(data),
     });
@@ -68,6 +70,7 @@ async function postData<T>(path: string, data: string): Promise<T> {
 
     return jresp.rslt as T;
   } catch (error: any) {
+    // console.error(`#eww4 postData fetch error response: ${error.message}`);
     if (error.message.includes('Failed to fetch')) {
       showNotification(
         "Відсутній зв'язок із сервером. Перевірте інтернет",
