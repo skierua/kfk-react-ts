@@ -12,12 +12,13 @@ export const balanceDataset = ({
   data,
   bal,
   sortFilter = 1000,
-  // shft,
+  shft,
 }: iBalanceDataset): DbBalanceType[] => {
   return data.filter((v) => {
     return (
-      v.acntno.startsWith(bal) && v.cuso < sortFilter
-      // (v.cuso < sortFilter || !shft || v.tm.startsWith(shft))
+      v.acntno.startsWith(bal) &&
+      // v.cuso < sortFilter
+      (v.cuso < sortFilter || !shft || v.tm.startsWith(shft))
     );
   });
 };
