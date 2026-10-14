@@ -3,12 +3,13 @@ import Box, { type BoxProps } from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
 
+import type { OfferType } from '../lib/types';
+
 import { OfferComponent } from '../share/Offer';
 import { OfferEdit } from './OfferEdit';
-import type { DbOfferType } from '../store/DbTypes';
-import { postData } from '../driver';
-import { useDataStore } from '../store/useDataStore';
+
 import { useUserStore } from '../store/useUserStore';
+import { useOfferStore } from '../store/useOfferStore';
 
 const KANT_LIST = [
   { id: 'BULK', name: 'BULK' },
@@ -17,10 +18,11 @@ const KANT_LIST = [
 ];
 
 export const OfferView = ({ ...other }: BoxProps) => {
+  const appUser = useUserStore((state) => state.appUser);
+  const showNotification = useUserStore((state) => state.showNotification);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [eoffer, setEoffer] = useState<DbOfferType | undefined>(undefined);
-  const { fetchOffers } = useDataStore();
-  const { appUser, showNotification } = useUserStore(); // << Беремо метод з Zustand
+  const [eoffer, setEoffer] = useState<OfferType | undefined>(undefined);
+  const submit = useOfferStore((state) => state.submit);
 
   const kantList = useMemo(() => {
     if (!appUser) return [];
@@ -31,9 +33,8 @@ export const OfferView = ({ ...other }: BoxProps) => {
   }, [appUser?.role]);
 
   const handleCreateNew = () => {
-    console.log('Creating new offer');
+    // console.log('Creating new offer');
     setEoffer(undefined); // Скидаємо вибрану пропозицію
-    // setSelectedOffer(emptyOffer); // Встановлюємо порожній шаблон
     setIsEditorOpen(true); // Відкриваємо форму
   };
 
@@ -43,21 +44,28 @@ export const OfferView = ({ ...other }: BoxProps) => {
   };
 
   const handleSubmit = async (data: any) => {
-    try {
-      await postData<any>(
-        '/offers',
-        // get().token ?? '',
-        JSON.stringify(data),
-      );
+    const isSuccess = await submit(data);
+    if (isSuccess) {
       showNotification('Пропозицію успішно збережено!', 'success');
-      await fetchOffers();
       handleClose();
-    } catch (err: any) {
-      console.error('Error submitting offer update:', err.message);
+    } else {
       showNotification('Помилка при збереженні пропозиції!', 'error');
-      //   alert('Помилка при збереженні пропозиції: ' + err.message);
-      return;
     }
+    // try {
+    //   await postData<any>(
+    //     '/offers',
+    //     // get().token ?? '',
+    //     JSON.stringify(data),
+    //   );
+    //   showNotification('Пропозицію успішно збережено!', 'success');
+    //   await fetchOffers();
+    //   handleClose();
+    // } catch (err: any) {
+    //   console.error('Error submitting offer update:', err.message);
+    //   showNotification('Помилка при збереженні пропозиції!', 'error');
+    //   //   alert('Помилка при збереженні пропозиції: ' + err.message);
+    //   return;
+    // }
   };
 
   return (
@@ -86,7 +94,7 @@ export const OfferView = ({ ...other }: BoxProps) => {
         </Box>
         <OfferComponent
           mode={'table'}
-          funcEdit={(offer: DbOfferType | undefined) => {
+          funcEdit={(offer: OfferType | undefined) => {
             // console.log('OfferView funcEdit called with offer:', offer);
             setEoffer(offer);
             setIsEditorOpen(true);

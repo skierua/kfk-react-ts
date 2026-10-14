@@ -1,12 +1,7 @@
 import { create } from 'zustand';
 import { subscribe } from '../events';
-import { authFetch, postData, getData } from '../driver';
-import type {
-  AppUser,
-  DbBalanceType,
-  DbCurrencySubType,
-  DbCurrencyType,
-} from './DbTypes';
+import { authFetch, postData } from '../driver';
+import type { AppUser, DbBalanceType } from './DbTypes';
 import { parseJwt } from '../lib/jwt';
 
 interface SnackbarState {
@@ -30,11 +25,12 @@ export interface UserState {
   setError: (error: string | null) => void;
   balance: DbBalanceType[];
   lastShift: string;
-  currencies: DbCurrencyType[];
+  // currencies: DbCurrencyType[];
+  // currencyInfo: Map<string, DbCurrencyType>;
   // isCurLoading: boolean;
-  fetchCurrencies: () => Promise<void>;
-  cursub: DbCurrencySubType[];
-  fetchCursub: () => Promise<void>;
+  // fetchCurrencies: () => Promise<void>;
+  // cursub: DbCurrencySubType[];
+  // fetchCursub: () => Promise<void>;
 
   snackbar: SnackbarState;
   showNotification: (
@@ -61,9 +57,9 @@ export const useUserStore = create<UserState>((set, get) => ({
   setError: (error) => set({ error }),
   balance: [],
   lastShift: new Date().toISOString().split('T')[0],
-  currencies: [],
-  cursub: [],
-
+  // currencies: [],
+  // cursub: [],
+  // currencyInfo: new Map<string, DbCurrencyType>(),
   login: async (base64Data) => {
     try {
       const response = await authFetch(base64Data);
@@ -156,61 +152,63 @@ export const useUserStore = create<UserState>((set, get) => ({
     };
   },
 
-  fetchCurrencies: async () => {
-    // Якщо дані вже є, не вантажимо знову
-    if (useUserStore.getState().currencies.length > 0) return;
+  // fetchCurrencies: async () => {
+  //   // Якщо дані вже є, не вантажимо знову
+  //   if (useUserStore.getState().currencies.length > 0) return;
 
-    // set({ isCurLoading: true });
-    try {
-      const data = await getData<DbCurrencyType[]>('/currencies', 'reqid=sel');
-      const sortedData = [...data]
-        .sort(
-          (a, b) => Number(a.so) - Number(b.so) || a.name.localeCompare(b.name),
-        )
-        .map((v): DbCurrencyType => {
-          return {
-            ...v,
-            dmst: Number(v.dmst),
-            qty: Number(v.qty),
-            so: Number(v.so),
-          };
-        }); // console.log('shft=', shft);
-      set({
-        currencies: sortedData,
-        //  isCurLoading: false
-      });
-    } catch (err: any) {
-      console.error('Помилка валют:', err);
-      // set({ isCurLoading: false });
-      set({ error: err.message });
-    }
-  },
+  //   // set({ isCurLoading: true });
+  //   try {
+  //     const data = await getData<DbCurrencyType[]>('/currencies', 'reqid=sel');
+  //     const sortedData = [...data]
+  //       .sort(
+  //         (a, b) => Number(a.so) - Number(b.so) || a.name.localeCompare(b.name),
+  //       )
+  //       .map((v): DbCurrencyType => {
+  //         return {
+  //           ...v,
+  //           dmst: Number(v.dmst),
+  //           qty: Number(v.qty ?? 1),
+  //           so: Number(v.so ?? 99),
+  //           flag: v.flag || '🏳️',
+  //         };
+  //       }); // console.log('shft=', shft);
+  //     set({
+  //       currencies: sortedData,
+  //       currencyInfo: new Map(sortedData.map((v) => [v.id, v])),
+  //       //  isCurLoading: false
+  //     });
+  //   } catch (err: any) {
+  //     console.error('Помилка валют:', err);
+  //     // set({ isCurLoading: false });
+  //     set({ error: err.message });
+  //   }
+  // },
 
-  fetchCursub: async () => {
-    if (useUserStore.getState().cursub.length > 0) return;
+  // fetchCursub: async () => {
+  //   if (useUserStore.getState().cursub.length > 0) return;
 
-    // set({ isCurLoading: true });
-    try {
-      const data = await getData<DbCurrencySubType[]>(
-        '/currencies',
-        'reqid=selsub',
-      );
-      const sortedData = [...data].sort(
-        (a, b) =>
-          Number(a.atclcode) - Number(b.atclcode) ||
-          Number(a.id) - Number(b.id),
-      );
-      // console.log('cursub data=', sortedData);
-      set({
-        cursub: sortedData,
-        //  isCurLoading: false
-      });
-    } catch (err: any) {
-      console.error('cursub error:', err);
-      // set({ isCurLoading: false });
-      set({ error: err.message });
-    }
-  },
+  //   // set({ isCurLoading: true });
+  //   try {
+  //     const data = await getData<DbCurrencySubType[]>(
+  //       '/currencies',
+  //       'reqid=selsub',
+  //     );
+  //     const sortedData = [...data].sort(
+  //       (a, b) =>
+  //         Number(a.atclcode) - Number(b.atclcode) ||
+  //         Number(a.id) - Number(b.id),
+  //     );
+  //     // console.log('cursub data=', sortedData);
+  //     set({
+  //       cursub: sortedData,
+  //       //  isCurLoading: false
+  //     });
+  //   } catch (err: any) {
+  //     console.error('cursub error:', err);
+  //     // set({ isCurLoading: false });
+  //     set({ error: err.message });
+  //   }
+  // },
   snackbar: {
     open: false,
     message: '',

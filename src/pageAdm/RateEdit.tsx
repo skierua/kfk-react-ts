@@ -8,56 +8,35 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { VkToggle, type VkToggleDataType } from '../share/VkToggle';
-import { useDataStore } from '../store/useDataStore';
-import { useUserStore } from '../store/useUserStore';
 import { foreignDataset } from '../lib/currencies';
-import { ratesDataset, type iRateDataset } from '../lib/rates';
 import { APP_CONFIG } from '../const';
 
-// --- Типи даних ---
-interface RateRecord {
-  shop: string;
-  atclcode: string;
-  scode: string;
-  pricecode: string;
-  qty: string | number;
-  bid: string;
-  ask: string;
-  tm: string;
-}
+import { useInfoStore } from '../store/useInfoStore';
+import { useUserStore } from '../store/useUserStore';
+import { useRateStore, type DbRateRecord } from '../store/useRateStore';
 
 interface RateEditProps extends BoxProps {
-  //   sqldata: DbRateType[]; // Ваші сирі дані з БД
-  //   role: 'admin' | 'kant' | string;
-  //   kantor: VkToggleDataType[];
-  //   currency: VkToggleDataType[];
-  //   cursub: any[];
-  //   kntBulk?: string;
-  baseKant: string;
-  baseList?: VkToggleDataType[];
-  kantList?: VkToggleDataType[];
   funcClose: () => void;
-  funcSubmit: (data: { reqid: string; rates: RateRecord[] }) => void;
 }
 
-export const RateEdit = ({
-  //   sqldata,
-  //   role,
-  //   kantor,
-  //   currency,
-  //   cursub,
-  //   kntBulk = "BULK",
-  baseKant,
-  baseList = [],
-  kantList = [],
-  funcClose,
-  funcSubmit,
-  ...other
-}: RateEditProps) => {
+export const RateEdit = ({ funcClose, ...other }: RateEditProps) => {
+  const isLoading = useRateStore((state) => state.isLoading);
   //   console.log('RateEdit DATA rendered ');
-  // --- Стан форми ---
-  const [base, setBase] = useState<string>(baseKant);
-  const [edknt, setEdknt] = useState<string[]>([baseKant]);
+  const appUser = useUserStore((state) => state.appUser);
+  const showNotification = useUserStore((state) => state.showNotification);
+  const rawRates = useRateStore((state) => state.dataset);
+  const kntInfo = useInfoStore((state) => state.shops);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const crnInfoSub = useInfoStore((state) => state.cursubmap);
+  const submit = useRateStore((state) => state.submit);
+  const error = useRateStore((state) => state.error);
+
+  const [base, setBase] = useState<string>(
+    appUser?.role === 'owner' ? (APP_CONFIG.BULK ?? '') : (appUser?.term ?? ''),
+  );
+  const [edknt, setEdknt] = useState<string[]>([
+    appUser?.role === 'owner' ? (APP_CONFIG.BULK ?? '') : (appUser?.term ?? ''),
+  ]);
   const [edcur, setEdcur] = useState('840');
   const [edcursub, setEdcursub] = useState('');
   const [edqty, setEdqty] = useState(1);
@@ -65,46 +44,58 @@ export const RateEdit = ({
   const [edask, setEdask] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // Прапорець відправки
-  const { currencies, cursub, fetchCurrencies, fetchCursub } = useUserStore();
-  const rawRates = useDataStore((state) => state.rates);
 
   useEffect(() => {
-    fetchCurrencies();
-    fetchCursub();
-  }, [fetchCurrencies, fetchCursub]);
+    if (isEditing || isLoading) return;
+    // console.log('base, edcur, edcursub', base, edcur, edcursub);
 
-  useEffect(() => {
-    // refresh rate data
-    if (isEditing) return;
-    const rate = ratesDataset({
-      data: rawRates,
-      curFilter: edcur,
-      kantFilter: base,
-      cursubFilter: edcursub,
-    } as iRateDataset);
-
-    if (rate.length > 0) {
-      setEdqty(rate[0].cqty || 1);
-      setEdbid(String(rate[0].bid) || '');
-      setEdask(String(rate[0].ask) || '');
+    const currentRate = rawRates.find((v) => {
+      return v.shop === base && v.atclcode === edcur && v.scode === edcursub;
+    });
+    if (currentRate) {
+      setEdqty(currentRate.qty || 1);
+      setEdbid(String(currentRate.bid) || '');
+      setEdask(String(currentRate.ask) || '');
     } else {
       setEdqty(1);
       setEdbid('');
       setEdask('');
     }
+    return () => {
+      // cleanup if needed
+    };
   }, [rawRates, base, edcur, edcursub]);
 
-  const foreignToggleList = useMemo((): VkToggleDataType[] => {
-    return foreignDataset(currencies).map((v) => ({
+  const baseToggleList = useMemo(() => {
+    return Object.values(kntInfo)
+      .sort((a, b) => a.so - b.so)
+      .map((v) => ({ id: v.name, name: v.name }));
+  }, [kntInfo]);
+
+  const kntToggleList = useMemo(() => {
+    if (!appUser) return [];
+    if (appUser.role === 'owner') {
+      return baseToggleList;
+    } else return [{ id: appUser.term, name: appUser.term }];
+  }, [appUser?.role, baseToggleList]);
+
+  const curToggleList = useMemo((): VkToggleDataType[] => {
+    return foreignDataset(Object.values(crnInfo)).map((v) => ({
       id: v.id,
       sname: v.chid,
       name: `${v.chid} - ${v.name}`,
     }));
-  }, [currencies]);
+  }, [crnInfo]);
 
-  const filteredSubCur = useMemo(() => {
-    return cursub.filter((v) => v.atclcode === edcur);
-  }, [cursub, edcur]);
+  const cursubToggleList = useMemo((): VkToggleDataType[] => {
+    return Object.values(crnInfoSub)
+      .filter((v) => v.atclcode === edcur)
+      .map((v) => ({
+        id: v.id,
+        sname: v.sname,
+        // name: `${v.id} - ${v.sname}`,
+      }));
+  }, [crnInfoSub, edcur]);
 
   const handleKantorToggle = (
     _: React.MouseEvent<HTMLElement>,
@@ -126,32 +117,31 @@ export const RateEdit = ({
 
     // Валідація перед відправкою
     if (!edbid || !edask) {
-      useUserStore
-        .getState()
-        .showNotification('Заповніть поля Купівлі та Продажу', 'warning');
+      showNotification('Заповніть поля Купівлі та Продажу', 'warning');
       return;
     }
 
     setIsSubmitting(true); // Вмикаємо лоадер
 
-    const rateList: RateRecord[] = edknt.map((shopId) => ({
+    const rateList: DbRateRecord[] = edknt.map((shopId) => ({
       shop: shopId,
       atclcode: edcur,
       scode: edcursub,
       pricecode: '',
       qty: edqty,
-      // Замінюємо + на кодований символ для безпеки API
       bid: edbid,
       ask: edask,
+      // Замінюємо + на кодований символ для безпеки API
       //   bid: edbid.replace(/\+/g, "%2B"),
       //   ask: edask.replace(/\+/g, "%2B"),
       tm: new Date().toISOString(),
     }));
-
-    funcSubmit({
-      reqid: 'upd',
-      rates: rateList,
-    });
+    const success = submit(rateList);
+    if (!!success) {
+      showNotification('Курс успішно збережено!', 'success');
+    } else {
+      showNotification(error ?? 'Помилка при збереженні курсу!', 'error');
+    }
     setIsEditing(false);
     setIsSubmitting(false);
   };
@@ -162,8 +152,8 @@ export const RateEdit = ({
         <Stack spacing={2}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <VkToggle
-              data={baseList}
-              dflt={baseKant}
+              data={baseToggleList}
+              dflt={base}
               label="База"
               limit={0}
               allowAll={false}
@@ -176,7 +166,7 @@ export const RateEdit = ({
                 size="small"
                 color="primary"
               >
-                {kantList.map((v) => (
+                {kntToggleList.map((v) => (
                   <ToggleButton key={v.id} value={v.id}>
                     {v.name}
                   </ToggleButton>
@@ -197,7 +187,7 @@ export const RateEdit = ({
             }}
           >
             <VkToggle
-              data={foreignToggleList}
+              data={curToggleList}
               dflt={edcur}
               allowAll={false}
               label="Валюта"
@@ -206,16 +196,14 @@ export const RateEdit = ({
                 setEdcur(v);
               }}
             />
-            {filteredSubCur.length > 0 && (
+            {cursubToggleList.length > 0 && (
               <VkToggle
-                data={filteredSubCur}
+                data={cursubToggleList}
                 dflt={edcursub}
                 allowAll={false}
                 limit={1}
                 // label="Тип"
                 fcb={(v) => {
-                  // setEdcursub('');
-                  console.log('Selected cursub=', v);
                   setEdcursub(v);
                 }}
               />

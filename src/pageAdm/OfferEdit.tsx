@@ -6,10 +6,12 @@ import TextField from '@mui/material/TextField';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 
-import type { DbOfferType } from '../store/DbTypes';
+import type { OfferType } from '../lib/types';
+
 import { VkToggle, type VkToggleDataType } from '../share/VkToggle';
 import { foreignDataset } from '../lib/currencies';
-import { useUserStore } from '../store/useUserStore';
+import { useInfoStore } from '../store/useInfoStore';
+// import { useUserStore } from '../store/useUserStore';
 import { APP_CONFIG } from '../const';
 
 interface OfferUpdatePayload {
@@ -26,7 +28,7 @@ interface OfferUpdatePayload {
 }
 
 interface OfferEditProps extends BoxProps {
-  offer?: DbOfferType;
+  offer?: OfferType;
   kantList?: VkToggleDataType[]; // Додаємо пропс для списку кас
   funcClose: () => void;
   funcSubmit: (data: OfferUpdatePayload) => void;
@@ -40,34 +42,35 @@ export const OfferEdit = ({
   ...other
 }: OfferEditProps) => {
   //   console.log('OfferEdit:', offer);
-  const [oid, setOid] = useState(offer?.oid ?? '');
+  const [oid, setOid] = useState(offer?.id ?? '');
   const [knt, setKnt] = useState(offer?.shop ?? 'CITY');
-  const [cur, setCur] = useState(offer?.chid ?? APP_CONFIG.CHID);
+  const [cur, setCur] = useState(offer?.curid ?? APP_CONFIG.CURID);
   const [ba, setBa] = useState<'bid' | 'ask'>(offer?.bidask ?? 'bid');
   const [amnt, setAmnt] = useState(offer?.amnt ?? '');
   const [rate, setRate] = useState(offer?.price ?? '');
   const [tel, setTel] = useState(offer?.tel ?? APP_CONFIG.PHONE);
-  const [note, setNote] = useState(offer?.onote ?? '');
-  const { currencies, fetchCurrencies } = useUserStore();
+  const [note, setNote] = useState(offer?.note ?? '');
+  // const { currencies, fetchCurrencies } = useUserStore();
+  const crnInfo = useInfoStore((state) => state.currencies);
 
-  useEffect(() => {
-    fetchCurrencies();
-  }, [fetchCurrencies]);
+  // useEffect(() => {
+  //   fetchCurrencies();
+  // }, [fetchCurrencies]);
 
   useEffect(() => {
     if (offer) {
-      setOid(offer.oid ?? '');
+      setOid(offer.id ?? '');
       setKnt(offer.shop ?? 'CITY');
-      setCur(offer.chid ?? APP_CONFIG.CHID);
+      setCur(offer.curid ?? APP_CONFIG.CURID);
       setBa(offer.bidask ?? 'bid');
       setAmnt(offer.amnt ?? '');
       setRate(offer.price ?? '');
       setTel(offer.tel ?? APP_CONFIG.PHONE);
-      setNote(offer.onote ?? '');
+      setNote(offer.note ?? '');
     } else {
       setOid('');
       setKnt('CITY');
-      setCur(APP_CONFIG.CHID);
+      setCur(APP_CONFIG.CURID);
       setBa('bid');
       setAmnt('');
       setRate('');
@@ -76,12 +79,12 @@ export const OfferEdit = ({
     }
   }, [offer]);
   const foreignToggleList = useMemo((): VkToggleDataType[] => {
-    return foreignDataset(currencies).map((v) => ({
-      id: v.chid,
+    return foreignDataset(Object.values(crnInfo)).map((v) => ({
+      id: v.id,
       sname: v.chid,
       name: `${v.chid} - ${v.name}`,
     }));
-  }, [currencies]);
+  }, [crnInfo]);
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     if (Number(amnt) < 0) {

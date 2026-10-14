@@ -1,8 +1,9 @@
-import type { DbRateType } from '../store/DbTypes';
+// import type { DbRateType } from '../store/DbTypes';
+import type { RateType } from '../lib/types';
 import { APP_CONFIG } from '../const';
 
 export interface iRateDataset {
-  data: DbRateType[];
+  data: RateType[];
   kantFilter?: string;
   curFilter?: string;
   cursubFilter?: string;
@@ -10,14 +11,14 @@ export interface iRateDataset {
   typeFilter?: number;
 }
 
-export const ratesDataset = ({
+export const ratesDataset_v2 = ({
   data,
   kantFilter,
   curFilter,
   cursubFilter,
   sortFilter,
   typeFilter,
-}: iRateDataset): DbRateType[] => {
+}: iRateDataset): RateType[] => {
   if (!data || !Array.isArray(data)) {
     console.error('ratesDataset: data is null or not an array');
     return [];
@@ -37,18 +38,19 @@ export const ratesDataset = ({
     if (kantFilter) {
       return v.shop === kantFilter;
     }
-
+    // return true;
     return v.shop !== APP_CONFIG.BULK;
   });
 };
-export const ratesDataset_v2 = ({
+
+export const ratesDataset = ({
   data,
   kantFilter,
   curFilter,
   cursubFilter,
   sortFilter,
   typeFilter,
-}: iRateDataset): DbRateType[] => {
+}: iRateDataset): RateType[] => {
   if (!data || !Array.isArray(data)) {
     console.error('ratesDataset: data is null or not an array');
     return [];
@@ -67,7 +69,7 @@ export const ratesDataset_v2 = ({
   });
 };
 
-export const maxTime = (rateset: DbRateType[]): string => {
+export const maxTime = (rateset: RateType[]): string => {
   return rateset.reduce((t, v) => {
     const max = v.bidtm > v.asktm ? v.bidtm : v.asktm;
     return max > t ? max : t;

@@ -15,17 +15,24 @@ export const currenciesDataset = ({
     console.error('currenciesDataset: data is null or not an array');
     return [];
   }
-
+  // console.log('currenciesDataset: data=', data.length);
   if (data.length === 0) return [];
 
-  return data.filter((v) => {
-    const matchesSort = sortFilter ? v.so < sortFilter : true;
-    const matchesType = typeFilter ? v.dmst === typeFilter : true;
+  return data
+    .filter((v) => {
+      const matchesSort = sortFilter ? v.so < sortFilter : true;
+      const matchesType = typeFilter ? v.dmst === typeFilter : true;
 
-    if (!matchesSort || !matchesType) return false;
+      if (!matchesSort || !matchesType) return false;
 
-    return true;
-  });
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.so !== b.so) {
+        return a.so - b.so;
+      }
+      return a.name.localeCompare(b.name);
+    });
 };
 
 export const foreignDataset = (data: DbCurrencyType[]): DbCurrencyType[] => {
@@ -36,5 +43,12 @@ export const foreignDataset = (data: DbCurrencyType[]): DbCurrencyType[] => {
 
   if (data.length === 0) return [];
 
-  return data.filter((v) => v.dmst !== 1);
+  return data
+    .filter((v) => v.dmst !== 1)
+    .sort((a, b) => {
+      if (a.so !== b.so) {
+        return a.so - b.so;
+      }
+      return a.name.localeCompare(b.name);
+    });
 };

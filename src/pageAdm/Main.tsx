@@ -29,16 +29,16 @@ import { DashBoard } from './DashBoard';
 import { BalanceView } from './BalanceView';
 import { OfferView } from './OfferView';
 
-import { useDataStore } from '../store/useDataStore';
+import { useInfoStore } from '../store/useInfoStore';
 import { useUserStore } from '../store/useUserStore';
-// import { OfferView } from './OfferView';
-// import { RateView } from './RateView';
-// import './Main.css';
+import { useOfferStore } from '../store/useOfferStore';
+import { useRateStore } from '../store/useRateStore';
 
 import { APP_CONFIG } from '../const';
 import { RateView } from './RateView';
 // import { ProfitTable } from '../share/Profit';
 import { ProfitView } from './ProfitView';
+import { RepAvrgRate } from './RepAvrgRate';
 // import { ChartView } from './ChartView';
 const drawerWidth = 180;
 
@@ -69,8 +69,8 @@ const MENU1 = [
 
 const MENU2 = [
   { route: 'vwbalance', text: 'Balance' },
-  // { route: 'vwrate', text: 'AvrgRates' },
   { route: 'vwprofit', text: 'Profit' },
+  { route: 'vwavrgrate', text: 'AvrgRates' },
   // { route: 'vwchart', text: 'Chart' },
   // { route: "sse", text: "SSE test" },
 ];
@@ -79,11 +79,13 @@ export function Main({ window }: { window?: () => Window }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  const ratesData = useDataStore((state) => state.fetchRates);
-  const ratesRefresh = useDataStore((state) => state.ratesAutoRefresh);
+  const currency = useInfoStore((state) => state.fetchCurrencies);
 
-  const offersData = useDataStore((state) => state.fetchOffers);
-  const offersRefresh = useDataStore((state) => state.offersAutoRefresh);
+  const ratesData = useRateStore((state) => state.fetchDataset);
+  const ratesRefresh = useRateStore((state) => state.autoRefresh);
+
+  const offersData = useOfferStore((state) => state.fetchOffers);
+  const offersRefresh = useOfferStore((state) => state.autoRefresh);
 
   const balance = useUserStore((state) => state.fetchBalance);
   const refreshBalance = useUserStore((state) => state.refreshBalance);
@@ -91,6 +93,13 @@ export function Main({ window }: { window?: () => Window }) {
 
   const authorized = useUserStore((state) => state.isAuthorized);
   const [route, setRoute] = useState<string>('home');
+
+  useEffect(() => {
+    currency();
+
+    return () => {};
+    // return () => {};
+  }, [currency]);
 
   useEffect(() => {
     ratesData();
@@ -102,6 +111,7 @@ export function Main({ window }: { window?: () => Window }) {
   }, [ratesData, ratesRefresh]);
 
   useEffect(() => {
+    // console.log('useEffect offersData STARTED');
     offersData();
 
     const stopRefresh = offersRefresh(APP_CONFIG.PUB_REFRESH);
@@ -300,6 +310,7 @@ export function Main({ window }: { window?: () => Window }) {
 
               {route == 'vwbalance' && <BalanceView />}
               {route == 'vwprofit' && <ProfitView />}
+              {route == 'vwavrgrate' && <RepAvrgRate />}
               {/* {route == 'vwchart' && <ChartView />} */}
             </Box>
           </Box>

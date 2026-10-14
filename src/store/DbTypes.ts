@@ -40,16 +40,19 @@ export interface DbOfferType {
   tm: string; // "2026-04-15T15:39:19.670Z"
 }
 
-export interface DbArchRateType {
+//period, atclcode, ba, qty, amnt, eq, shop, acnt, cashier, minrate, maxrate
+export interface DbDayCurRsltType {
   period: string; // "2026-04-11"
-  bamnt: string; // "26000"
-  beq: string; // "1137890"
-  bmin: string; // "43.4"
-  bmax: string; // "43.8"
-  aamnt: string; // "-43340"
-  aeq: string; // "-1903000"
-  amin: string; // "43.8"
-  amax: string; // "44"
+  atclcode: string; // "840"
+  ba: string; // "26000"
+  qty: number; // "1"
+  amnt: number; // "43340"
+  eq: number; // "1137890"
+  shop: string; // "43.4"
+  acnt: string; // "43.8"
+  cashier: string; // "-1903000"
+  minrate: number; // "43.8"
+  maxrate: number; // "44"
 }
 
 export interface DbBalanceType {
@@ -74,10 +77,34 @@ export interface DbCurrencyType {
   qty: number; // "1"
   so: number; // "10"
   symb: string; // "$"
+  flag: string; // "🇺🇸"
+  sub: { id: string; sname: string }[];
 }
 
 export interface DbCurrencySubType {
   atclcode: string; // "840"
   id: string; //""
   sname: string; //"$100 син"
+}
+
+// agregate document type
+export interface DbDcmAgrType {
+  period: string; // "2026-04-11"
+  atclcode: string; // "840"
+  dcmcode: string; // ""
+  shop: string; // "FEYA"
+  amnt: number; // ""
+  eq: number; // ""
+  dsc?: number; // ""
+  bns?: number; // ""
+}
+
+export interface DbMnRsltType {
+  period: string; // "2026-04-11"
+  atclcode: string; // "840"
+  shop: string; // "FEYA"
+  amnt: number; // ""
+  code: string; // ""
+  acnt: string; // ""
+  cashier?: string; // ""
 }

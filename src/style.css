@@ -121,7 +121,7 @@
 
 .brd-component-wrapper {
   width: 100%;
-  background-color: #ffffffcc;
+  background-color: #ffffffe4;
   border-bottom: 1px solid lightgrey;
   border-radius: var(--brd-rem);
   padding: calc(var(--brd-rem) * 0.5);

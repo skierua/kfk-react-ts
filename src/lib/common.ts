@@ -151,8 +151,9 @@ export function tgMessage({
               maximumFractionDigits: 4,
             })) +
         ' ' +
-        (v.rqty === '1' ? '' : `${v.rqty} `) +
-        getFlagByChid(v.chid) +
+        (v.rqty === 1 ? '' : `${v.rqty} `) +
+        (v.flag ?? '🏳️') +
+        // getFlagByChid(v.chid) +
         ' ' +
         (v.ask === 0
           ? '--.--'

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import Box, { type BoxProps } from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Avatar from '@mui/material/Avatar';
+// import Avatar from '@mui/material/Avatar';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 
@@ -18,10 +18,13 @@ import CircleIcon from '@mui/icons-material/Circle';
 import CallIcon from '@mui/icons-material/Call';
 import EditIcon from '@mui/icons-material/Edit';
 
+import type { OfferType } from '../lib/types';
+
 import { VkToggle, type VkToggleDataType } from './VkToggle';
-import type { DbOfferType } from '../store/DbTypes';
-import { useDataStore } from '../store/useDataStore';
+// import { useDataStore } from '../store/useDataStore';
 import { useUserStore } from '../store/useUserStore';
+import { useOfferStore } from '../store/useOfferStore';
+import { useInfoStore } from '../store/useInfoStore';
 
 import { humanDate } from '../lib/common';
 import {
@@ -35,7 +38,7 @@ interface OfferComponentProps extends BoxProps {
   mode?: 'card' | 'table';
   allowEdit?: boolean;
   showFilter?: boolean;
-  funcEdit?: (offer?: DbOfferType) => void;
+  funcEdit?: (offer?: OfferType) => void;
 }
 
 export const OfferComponent = ({
@@ -44,34 +47,53 @@ export const OfferComponent = ({
   funcEdit,
   ...other
 }: OfferComponentProps) => {
-  const rawOffers = useDataStore((state) => state.offers);
+  const rawOffers = useOfferStore((state) => state.offers);
   const [knt, setKnt] = useState('');
   const [cur, setCur] = useState('');
   const [baf, setBaf] = useState(''); // bid | ask filter
+  const crnInfo = useInfoStore((state) => state.currencies);
+  // console.log('rawOffers data:', rawOffers); // Додаємо лог для перевірки
 
-  const dataset: DbOfferType[] = useMemo(() => {
+  const transformedData: OfferType[] = useMemo(() => {
+    const offers = rawOffers.map((v) => {
+      const cur = crnInfo[v.curid];
+      return {
+        ...v,
+        chid: cur?.chid ?? v.curid,
+        name: cur?.name ?? v.curid,
+        qty: cur?.qty ?? 1,
+        symb: cur?.symb ?? '',
+        flag: cur?.flag ?? '🏳️',
+        so: Number(cur?.so || 999),
+      };
+    });
+    return offers;
+  }, [rawOffers, crnInfo]);
+  // console.log('Transformed offers data:', transformedData); // Додаємо лог для перевірки
+  const dataset: OfferType[] = useMemo(() => {
     return offersDataset({
-      data: rawOffers,
+      data: transformedData,
       kantFilter: knt,
       curFilter: cur,
       typeFilter: baf,
     });
-  }, [rawOffers, knt, cur, baf]);
+  }, [transformedData, knt, cur, baf]);
 
   const kantList: VkToggleDataType[] = useMemo(() => {
     return kantToggleList(rawOffers);
   }, [rawOffers]);
 
   const curList: VkToggleDataType[] = useMemo(() => {
-    return curToggleList(rawOffers);
-  }, [rawOffers]);
+    return curToggleList(transformedData);
+  }, [transformedData]);
+  // console.log('curList:', curList); // Додаємо лог для перевірки
 
   const baList: VkToggleDataType[] = useMemo(() => {
     return baToggleList(rawOffers);
   }, [rawOffers]);
 
   return (
-    <Box {...other}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }} {...other}>
       {showFilter && (
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 3 } }}>
           {kantList.length > 1 && (
@@ -87,7 +109,7 @@ export const OfferComponent = ({
             <VkToggle
               data={curList}
               dflt={cur}
-              label="Валюта"
+              label="Вал"
               limit={3}
               fcb={(v) => setCur(v)}
             />
@@ -115,8 +137,8 @@ export const OfferComponent = ({
           {dataset.map((v) => {
             return (
               <OfferCard
-                id={v.oid}
-                key={v.oid}
+                id={v.id}
+                key={v.id}
                 data={v}
                 sx={{
                   //   flex: '1 1 300px',
@@ -139,8 +161,8 @@ export const OfferComponent = ({
 };
 
 interface OfferTableProps extends TableContainerProps {
-  data: DbOfferType[];
-  funcEdit?: (offer?: DbOfferType) => void;
+  data: OfferType[];
+  funcEdit?: (offer?: OfferType) => void;
 }
 
 export const OfferTable = ({ data, funcEdit, ...other }: OfferTableProps) => {
@@ -159,12 +181,7 @@ export const OfferTable = ({ data, funcEdit, ...other }: OfferTableProps) => {
         <TableBody>
           {data.map((v) => {
             return (
-              <OfferTableRow
-                id={v.oid}
-                key={v.oid}
-                row={v}
-                funcEdit={funcEdit}
-              />
+              <OfferTableRow id={v.id} key={v.id} row={v} funcEdit={funcEdit} />
             );
           })}
         </TableBody>
@@ -174,8 +191,8 @@ export const OfferTable = ({ data, funcEdit, ...other }: OfferTableProps) => {
 };
 
 interface OfferTableRowProps extends TableRowProps {
-  row: DbOfferType;
-  funcEdit?: (offer?: DbOfferType) => void;
+  row: OfferType;
+  funcEdit?: (offer?: OfferType) => void;
 }
 
 const OfferTableRow = ({ row, funcEdit, ...other }: OfferTableRowProps) => {
@@ -240,7 +257,7 @@ const OfferTableRow = ({ row, funcEdit, ...other }: OfferTableRowProps) => {
 };
 
 interface OfferCardProps extends BoxProps {
-  data: DbOfferType;
+  data: OfferType;
   //   allowEdit?: boolean;
   //   funcEdit?: (item: DbOfferType) => void;
 }
@@ -292,11 +309,16 @@ export const OfferCard = ({ data, ...other }: OfferCardProps) => {
 
       {/* Основна інформація: Валюта та Ціна */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar
+        {/* <Avatar
           alt={data.curid}
-          src={`/flag/${data.curid}.svg`}
+          // src={`/flag/${data.curid}.svg`}
           sx={{ width: 32, height: 32, border: '1px solid #eee' }}
-        />
+        >
+          {data.flag}
+        </Avatar> */}
+        <Typography variant="h4" sx={{ lineHeight: 1 }}>
+          {data.flag}
+        </Typography>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="subtitle2" sx={{ lineHeight: 1 }}>
             {data.chid}
@@ -346,7 +368,7 @@ export const OfferCard = ({ data, ...other }: OfferCardProps) => {
       </Box>
 
       {/* Примітка */}
-      {data.onote && (
+      {data.note && (
         <Box
           sx={{
             backgroundColor: 'action.hover',
@@ -357,7 +379,7 @@ export const OfferCard = ({ data, ...other }: OfferCardProps) => {
             borderLeft: '3px solid lightgrey',
           }}
         >
-          {data.onote}
+          {data.note}
         </Box>
       )}
     </Box>

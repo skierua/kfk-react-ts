@@ -1,71 +1,17 @@
-import { useMemo } from 'react';
+// import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box, { type BoxProps } from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-// import { grey } from '@mui/material/colors';
 
-import { RateWrapper, Rate4Element } from '../share/Rate';
-// import { RateTable } from '../share/RateTable';
-
-import { useDataStore } from '../store/useDataStore';
-import type { DbRateType } from '../store/DbTypes';
+import type { RateType } from '../lib/types';
 import { APP_CONFIG } from '../const';
-import { ratesDataset, maxTime } from '../lib/rates';
+import { maxTime } from '../lib/rates';
+import { RateTable_test, RatePool } from '../share/Rate';
 import { humanDate } from '../lib/common';
 
+import { useInfoStore } from '../store/useInfoStore';
+
 export const RateView = ({ ...other }: BoxProps) => {
-  const rawRates = useDataStore((state) => state.rates);
-  // console.info('RateView render', rawRates);
-  const bulk2Dataset = useMemo(() => {
-    return ratesDataset({
-      data: rawRates,
-      kantFilter: APP_CONFIG.BULK,
-      typeFilter: 2,
-    });
-  }, [rawRates]);
-
-  const bulk2Changed = useMemo(() => {
-    return humanDate(maxTime(bulk2Dataset));
-  }, [bulk2Dataset]);
-
-  const bulk6Dataset = useMemo(() => {
-    return ratesDataset({
-      data: rawRates,
-      kantFilter: APP_CONFIG.BULK,
-      typeFilter: 6,
-    });
-  }, [rawRates]);
-
-  const bulk6Changed = useMemo(() => {
-    return humanDate(maxTime(bulk6Dataset));
-  }, [bulk6Dataset]);
-
-  const kant2Dataset = useMemo(() => {
-    const dataset = rawRates.map((v): DbRateType => {
-      return {
-        ...v,
-        sname: '',
-      };
-    });
-    return ratesDataset({
-      data: dataset,
-      kantFilter: APP_CONFIG.KANT,
-      typeFilter: 2,
-    });
-  }, [rawRates]);
-
-  const kant2Changed = useMemo(() => {
-    return humanDate(maxTime(kant2Dataset));
-  }, [kant2Dataset]);
-
-  const kant4Dataset = useMemo(() => {
-    return ratesDataset({
-      data: rawRates,
-      kantFilter: APP_CONFIG.KANT,
-      typeFilter: 4,
-    }).filter((v) => Number(v.bid) !== 0 || Number(v.ask) !== 0);
-  }, [rawRates]);
-
   return (
     <Box
       // sx={{
@@ -87,23 +33,18 @@ export const RateView = ({ ...other }: BoxProps) => {
             display: 'flex',
             flexDirection: 'column',
             rowGap: { xs: 1, sm: 3 },
-            // p: 1,
-            // gap: '0.5rem',
           }}
         >
           <RateWrapper
-            data={bulk2Dataset}
-            maxTime={bulk2Changed}
+            shop={APP_CONFIG.BULK}
+            typeFilter={2}
             wtitle="ГУРТ"
             wfooter="працюємо з пошкодженими купюрами"
-            // sx={{ backgroundColor: '#13b17a' }}
-            // sx={{ width: '100%' }}
           />
           <RateWrapper
-            data={bulk6Dataset}
-            maxTime={bulk6Changed}
+            shop={APP_CONFIG.BULK}
+            typeFilter={6}
             wtitle="КОНВЕРТАЦІЯ"
-            // wfooter="test"
             wfooter="кроскурси вказано для білого долара"
           />
         </Box>
@@ -112,40 +53,14 @@ export const RateView = ({ ...other }: BoxProps) => {
             display: 'flex',
             flexDirection: 'column',
             rowGap: { xs: 1, sm: 3 },
-            // gap: '0.5rem'
           }}
         >
-          <RateWrapper
-            data={kant2Dataset}
-            maxTime={kant2Changed}
-            wtitle="РОЗДРІБ"
+          <RateWrapper shop={APP_CONFIG.KANT} typeFilter={2} wtitle="РОЗДРІБ" />
+          <RatePool
+            kantFilter={APP_CONFIG.KANT}
+            typeFilter={4}
+            wtitle="РОЗДРІБ. купівля"
           />
-
-          <Box className="adm-dash-container" {...other}>
-            <Box className="adm-dash-container-title-wrapper">
-              <Box className="adm-dash-container-title">РОЗДРІБ. купівля</Box>
-            </Box>
-            <Box
-              component={Paper}
-              sx={{
-                width: { xs: 'auto', sm: '360px' },
-                display: 'flex',
-                padding: '5px',
-                gap: 1,
-                flexWrap: 'wrap',
-              }}
-            >
-              {kant4Dataset.map((v) => {
-                return (
-                  <Rate4Element
-                    id={v.shop + '-' + v.atclcode}
-                    key={v.shop + '-' + v.atclcode}
-                    data={v}
-                  />
-                );
-              })}
-            </Box>
-          </Box>
         </Box>
       </Box>
       <Alert
@@ -155,6 +70,64 @@ export const RateView = ({ ...other }: BoxProps) => {
       >
         Курси мають виключно інформативний характер.
       </Alert>
+    </Box>
+  );
+};
+
+interface RateWrapperProps extends BoxProps {
+  shop: string;
+  typeFilter?: number | number[];
+  wtitle?: string;
+  wfooter?: string;
+}
+
+const RateWrapper = ({
+  shop,
+  typeFilter,
+  wtitle,
+  wfooter,
+  ...other
+}: RateWrapperProps) => {
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const [childData, setChildData] = useState<RateType[]>([]);
+
+  const shopList = useMemo((): string[] => {
+    return !!shop ? [shop] : [];
+  }, [shop]);
+
+  const curList = useMemo((): string[] => {
+    return Object.values(crnInfo)
+      .filter((v) => Number(typeFilter) === Number(v.dmst))
+      .map((v) => v.id);
+  }, [crnInfo, typeFilter]);
+
+  const handleChildDataChanged = (data: RateType[]) => {
+    setChildData(data);
+  };
+
+  const lastUpdated = useMemo(() => {
+    const latestUpdate = maxTime(childData);
+    return humanDate((latestUpdate || '') as string);
+  }, [childData]);
+
+  return (
+    <Box className="adm-dash-container" {...other}>
+      <Box className="adm-dash-container-title-wrapper">
+        <Box
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          {wtitle && <div className="adm-dash-container-title">{wtitle}</div>}
+        </Box>
+        <div className="adm-dash-container-title-tm">{lastUpdated}</div>
+      </Box>
+
+      <RateTable_test
+        curFilter={curList}
+        kntFilter={shopList}
+        showFlag={true}
+        onDataChange={handleChildDataChanged}
+      />
+      {wfooter && <Alert severity="info">{wfooter}</Alert>}
     </Box>
   );
 };
