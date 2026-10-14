@@ -121,52 +121,10 @@ const SubTotalRowGroup = ({
   }, [forceOpen]);
 
   return (
-    <>
-      <TableRow
-        // sx={{ bgcolor: 'action.hover' }}
-        sx={{
-          '& > *': { borderBottom: 'unset' },
-          '&:last-child td, &:last-child th': { border: 0 },
-          // bgcolor: 'action.hover',
-          // bgcolor: open ? 'action.hover' : 'inherit',
-          '& .MuiTableCell-root': {
-            padding: '4px 8px',
-            tableLayout: 'fixed',
-          },
-        }}
-      >
-        <TableCell sx={{ pl: 4 }}>
-          {hasChildren && (
-            <IconButton
-              size="small"
-              onClick={() => setOpen(!open)}
-              sx={{ p: 0, mr: 1 }}
-            >
-              <ExpandMoreIcon
-                sx={{
-                  transition: 'transform 0.2s',
-                  transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                }}
-              />
-            </IconButton>
-          )}
-          <i>{subRow.code}</i>
-        </TableCell>
-        {subRow.amnt.map((val, idx) => (
-          <TableCell key={idx} align="right">
-            <Typography
-              variant="body2"
-              color={val < 0 ? 'error.main' : 'text.primary'}
-            >
-              {val.toLocaleString('uk-UA')}
-            </Typography>
-          </TableCell>
-        ))}
-      </TableRow>
-
-      {/* Рівень 3: Data */}
-      {hasChildren && (
+    <Table>
+      <TableBody>
         <TableRow
+          // sx={{ bgcolor: 'action.hover' }}
           sx={{
             '& > *': { borderBottom: 'unset' },
             '&:last-child td, &:last-child th': { border: 0 },
@@ -178,54 +136,100 @@ const SubTotalRowGroup = ({
             },
           }}
         >
-          <TableCell
-            style={{ paddingBottom: 0, paddingTop: 0 }}
-            colSpan={subRow.amnt.length + 1}
+          <TableCell sx={{ pl: 4 }}>
+            {hasChildren && (
+              <IconButton
+                size="small"
+                onClick={() => setOpen(!open)}
+                sx={{ p: 0, mr: 1 }}
+              >
+                <ExpandMoreIcon
+                  sx={{
+                    transition: 'transform 0.2s',
+                    transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </IconButton>
+            )}
+            <i>{subRow.code}</i>
+          </TableCell>
+          {subRow.amnt.map((val, idx) => (
+            <TableCell key={idx} align="right">
+              <Typography
+                variant="body2"
+                sx={{
+                  color: val < 0 ? 'error.main' : 'text.primary',
+                }}
+              >
+                {Math.abs(val).toLocaleString('uk-UA')}
+              </Typography>
+            </TableCell>
+          ))}
+        </TableRow>
+
+        {/* Рівень 3: Data */}
+        {hasChildren && (
+          <TableRow
+            sx={{
+              '& > *': { borderBottom: 'unset' },
+              '&:last-child td, &:last-child th': { border: 0 },
+              // bgcolor: 'action.hover',
+              // bgcolor: open ? 'action.hover' : 'inherit',
+              '& .MuiTableCell-root': {
+                padding: '4px 8px',
+                tableLayout: 'fixed',
+              },
+            }}
           >
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box sx={{ py: 0.5 }}>
-                {subRow.chld!.map((dataRow) => (
-                  <Box
-                    key={dataRow.id}
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: `1fr repeat(${dataRow.amnt.length}, 1fr)`,
-                      alignItems: 'center',
-                      py: 0.8,
-                      borderBottom: '1px dashed #eee',
-                      '&:hover': { bgcolor: 'action.selected' },
-                    }}
-                  >
+            <TableCell
+              style={{ paddingBottom: 0, paddingTop: 0 }}
+              colSpan={subRow.amnt.length + 1}
+            >
+              <Collapse in={open} timeout="auto" unmountOnExit>
+                <Box sx={{ py: 0.5 }}>
+                  {subRow.chld!.map((dataRow) => (
                     <Box
+                      key={dataRow.id}
                       sx={{
-                        pl: 8,
-                        color: 'text.secondary',
-                        fontSize: '0.875rem',
+                        display: 'grid',
+                        gridTemplateColumns: `1fr repeat(${dataRow.amnt.length}, 1fr)`,
+                        alignItems: 'center',
+                        py: 0.8,
+                        borderBottom: '1px dashed #eee',
+                        '&:hover': { bgcolor: 'action.selected' },
                       }}
                     >
-                      {dataRow.code}
-                    </Box>
-                    {dataRow.amnt.map((val, idx) => (
                       <Box
-                        key={idx}
                         sx={{
-                          textAlign: 'right',
-                          pr: 2,
+                          pl: 8,
+                          color: 'text.secondary',
                           fontSize: '0.875rem',
-                          color: val < 0 ? 'error.main' : 'text.primary',
                         }}
                       >
-                        {val.toLocaleString('uk-UA')}
+                        {dataRow.code}
                       </Box>
-                    ))}
-                  </Box>
-                ))}
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      )}
-    </>
+                      {dataRow.amnt.map((val, idx) => (
+                        <Box
+                          key={idx}
+                          sx={{
+                            textAlign: 'right',
+                            pr: 2,
+                            fontSize: '0.875rem',
+                            color: val < 0 ? 'error.main' : 'text.primary',
+                          }}
+                        >
+                          {Math.abs(val).toLocaleString('uk-UA')}
+                        </Box>
+                      ))}
+                    </Box>
+                  ))}
+                </Box>
+              </Collapse>
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
   );
 };
 
@@ -282,7 +286,7 @@ const TotalRowGroup = ({
               color: val < 0 ? 'error.main' : 'text.primary',
             }}
           >
-            {val.toLocaleString('uk-UA')}
+            {Math.abs(val).toLocaleString('uk-UA')}
           </TableCell>
         ))}
       </TableRow>

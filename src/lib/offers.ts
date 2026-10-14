@@ -1,8 +1,8 @@
-import type { DbOfferType } from '../store/DbTypes';
+import type { OfferType } from '../lib/types';
 import type { VkToggleDataType } from '../share/VkToggle';
 
 interface iOffersDataset {
-  data: DbOfferType[];
+  data: OfferType[];
   kantFilter?: string;
   curFilter?: string;
   typeFilter?: string; //'bid' | 'ask' | '';
@@ -13,7 +13,7 @@ export const offersDataset = ({
   kantFilter,
   curFilter,
   typeFilter,
-}: iOffersDataset): DbOfferType[] => {
+}: iOffersDataset): OfferType[] => {
   if (!data || !Array.isArray(data)) {
     console.error('offersDataset: data is null or not an array');
     return [];
@@ -30,29 +30,30 @@ export const offersDataset = ({
   });
 };
 
-export const kantToggleList = (data: DbOfferType[]): VkToggleDataType[] => {
+export const kantToggleList = (data: OfferType[]): VkToggleDataType[] => {
   return data
     .filter(
       (value, index, array) =>
         array.findIndex((v) => v.shop === value.shop) === index,
     )
+    .sort((a, b) => (a.so || 999) - (b.so || 999))
     .map((v) => {
       return { id: v.shop, sname: v.shop, name: v.shop };
     });
 };
 
-export const curToggleList = (data: DbOfferType[]): VkToggleDataType[] => {
+export const curToggleList = (data: OfferType[]): VkToggleDataType[] => {
   return data
     .filter(
       (value, index, array) =>
         array.findIndex((v) => v.curid === value.curid) === index,
     )
     .map((v) => {
-      return { id: v.curid, sname: v.chid, name: v.name };
+      return { id: v.curid, sname: v.chid, name: v.chid };
     });
 };
 
-export const baToggleList = (data: DbOfferType[]): VkToggleDataType[] => {
+export const baToggleList = (data: OfferType[]): VkToggleDataType[] => {
   return data
     .filter(
       (value, index, array) =>

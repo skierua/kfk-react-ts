@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
 // import FormControlLabel from "@mui/material/FormControlLabel";
@@ -52,44 +52,36 @@ export const VkToggle = ({
 }: VkTogglePropsType) => {
   const [crnt, setCrnt] = useState(dflt);
 
+  const dataset: VkToggleDataType[] = useMemo(() => {
+    if (allowAll && data.length > 1) {
+      return [{ id: '', sname: 'Всі', name: 'Всі' }, ...data];
+    }
+    return data;
+  }, [allowAll, data]);
   // Синхронізація внутрішнього стану, якщо dflt зміниться ззовні
   useEffect(() => {
-    setCrnt(dflt);
-  }, [dflt]);
+    const newCrnt = dflt ? dflt : dataset.length > 0 ? dataset[0].id : '';
+    setCrnt(newCrnt);
+    if (fcb) fcb(newCrnt); // Викликаємо відразу, без useEffect
+  }, [dataset, dflt, fcb]);
 
   const handleChange = (newValue: string) => {
     setCrnt(newValue);
     if (fcb) fcb(newValue); // Викликаємо відразу, без useEffect
   };
 
-  const showAll = allowAll && data.length > 1;
-
-  // Спільний рендер кнопки "Всі"
-  const renderAllItem = (isSelect: boolean) => {
-    if (!showAll) return null;
-    return isSelect ? (
-      <MenuItem key="all" value="" divider sx={{ fontWeight: 'bold' }}>
-        Всі
-      </MenuItem>
-    ) : (
-      <ToggleButton key="all" value="">
-        Всі
-      </ToggleButton>
-    );
-  };
-
   return (
     <Box {...other}>
-      <FormControl size="small" fullWidth={data.length > limit}>
-        {data.length <= limit ? (
+      <FormControl size="small" fullWidth={dataset.length > limit}>
+        {dataset.length <= limit ? (
           <ToggleButtonGroup
             value={crnt}
             exclusive
             size="small"
             onChange={(_, val) => val !== null && handleChange(val)}
           >
-            {renderAllItem(false)}
-            {data.map((v) => (
+            {/* {renderAllItem(false)} */}
+            {dataset.map((v) => (
               <ToggleButton key={v.id} value={v.id}>
                 {v.sname ?? v.name}
               </ToggleButton>
@@ -106,8 +98,8 @@ export const VkToggle = ({
               onChange={(e) => handleChange(e.target.value)}
               sx={{ minWidth: 140 }}
             >
-              {renderAllItem(true)}
-              {data.map((v) => (
+              {/* {renderAllItem(true)} */}
+              {dataset.map((v) => (
                 <MenuItem key={`item-${v.id}`} value={v.id}>
                   {v.name ?? v.sname}
                 </MenuItem>

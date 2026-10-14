@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -22,8 +22,8 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { grey } from '@mui/material/colors';
 
 import { VkToggle } from './VkToggle';
-import { getData } from '../driver';
-import type { DbArchRateType } from '../store/DbTypes';
+import type { DbDayCurRsltType } from '../store/DbTypes';
+import { useRepoStore } from '../store/useRepoStore';
 
 interface RateChartPropsType extends React.ComponentPropsWithoutRef<
   typeof Box
@@ -38,11 +38,72 @@ interface RateChartPropsType extends React.ComponentPropsWithoutRef<
 
 interface CharDataType {
   x: string;
-  period: string;
+  // period: string;
   bid: number;
   ask: number;
   [key: string]: any;
 }
+
+interface DbArchRateTransformedType {
+  period: string; // "2026-04-11"
+  bamnt: number; // "26000"
+  beq: number; // "1137890"
+  bmin: number; // "43.4"
+  bmax: number; // "43.8"
+  aamnt: number; // "-43340"
+  aeq: number; // "-1903000"
+  amin: number; // "43.8"
+  amax: number; // "44"
+}
+
+const transformData = (data: DbDayCurRsltType[]): CharDataType[] => {
+  if (data.length == 0) {
+    return [];
+  }
+  const map = new Map<string, DbArchRateTransformedType>();
+  for (let r of data) {
+    const periodKey = r.period;
+    if (!map.has(periodKey)) {
+      map.set(periodKey, {
+        period: r.period,
+        bamnt: 0,
+        beq: 0,
+        bmin: 0,
+        bmax: 0,
+        aamnt: 0,
+        aeq: 0,
+        amin: 0,
+        amax: 0,
+      });
+    }
+    const existingData = map.get(periodKey);
+    if (existingData) {
+      if (r.ba === 'buy') {
+        existingData.bamnt += Number(r.amnt);
+        existingData.beq += Number(r.eq);
+        existingData.bmin = Number(r.minrate);
+        existingData.bmax = Number(r.maxrate);
+      } else if (r.ba === 'sell') {
+        existingData.aamnt += Number(r.amnt);
+        existingData.aeq += Number(r.eq);
+        existingData.amin = Number(r.minrate);
+        existingData.amax = Number(r.maxrate);
+      }
+    }
+  }
+  const tmpRes: CharDataType[] = [];
+  for (let r of map.values()) {
+    tmpRes.push({
+      x: r.period,
+      // period: periodKey.slice(-4).replace('-', ''),
+      bid: r.beq / r.bamnt,
+      ask: r.aeq / r.aamnt,
+    });
+  }
+  const res: CharDataType[] = tmpRes.sort((a, b) => a.x.localeCompare(b.x));
+  // console.log('res', res);
+  return res;
+};
 
 export const RateChart = ({
   chartPrefHeight = 250,
@@ -54,39 +115,28 @@ export const RateChart = ({
   ...other
 }: RateChartPropsType) => {
   const [fltcur, setFltcur] = useState<string>(cur ?? '840'); // currency filter
-  const [fltprd, setFltprd] = useState<Date>(period ?? new Date()); // period filter
-  const [chartData, setChartData] = useState<CharDataType[]>([]);
-
-  // const chartHeight: string = () => {
-  //   return ((showTable ?? true) ? '250px' : '100%');
-  // };
-  const transformData = (data: DbArchRateType[]) => {
-    let res: CharDataType[] = [];
-    if (data.length == 0) {
-      setChartData(res);
-    }
-    for (let i = 0; i < data.length; ++i) {
-      res.push({
-        x: data[i].period, //.slice(-2),
-        period: data[i].period.slice(-4).replace('-', ''),
-        bid: Number(data[i].beq) / Number(data[i].bamnt), //.toFixed(2)
-        ask: Number(data[i].aeq) / Number(data[i].aamnt), //.toFixed(2)
-      });
-    }
-    // return ret;
-    setChartData(res);
-  };
+  const [fltprd, setFltprd] = useState<string>(
+    new Date().toISOString().split('T')[0],
+  ); // period filter
+  // const [chartData, setChartData] = useState<CharDataType[]>([]);
+  const rawData = useRepoStore((state) => state.dayCurRslt);
+  const fetchData = useRepoStore((state) => state.fetchDayCurRslt);
 
   useEffect(() => {
-    (async () => {
-      const dateStr = fltprd.toISOString().split('T')[0];
-      const ratesData = await getData<DbArchRateType[]>(
-        '/archive',
-        `reqid=ratesAvrg&period=${dateStr}&cur=${fltcur}`,
-      );
-      transformData(ratesData);
-    })();
-  }, [fltprd, fltcur]);
+    fetchData(fltprd);
+  }, [fetchData, fltprd]);
+  // console.log('rawData', rawData);
+
+  const chartData = useMemo(() => {
+    const filteredData = rawData.filter((item) => item.atclcode === fltcur);
+    const transformedData = transformData(filteredData);
+    return transformedData;
+  }, [rawData, fltcur]);
+
+  const tableData = useMemo(() => {
+    const rev = [...chartData].reverse();
+    return rev;
+  }, [chartData]);
 
   return (
     <Box {...other} style={style}>
@@ -103,11 +153,15 @@ export const RateChart = ({
               slotProps={{ textField: { size: 'small' } }}
               value={dayjs(fltprd)}
               // value={dayjs(period)}
-              onChange={(v) =>
-                setFltprd(
-                  new Date(v ? v.toISOString() : new Date().toISOString()),
-                )
-              }
+              onChange={(v) => {
+                const formattedDate = v
+                  ? v.format('YYYY-MM-DD')
+                  : dayjs().format('YYYY-MM-DD');
+                setFltprd(formattedDate);
+                // setFltprd(
+                //   new Date(v ? v.toISOString() : new Date().toISOString()),
+                // )
+              }}
               format="DD-MM-YY"
               // minDate="01-01-2024"
               closeOnSelect={true}
@@ -206,9 +260,15 @@ export const RateChart = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {chartData.map((v) => {
-                  return <Row id={v.period} key={v.period} itm={v} />;
+                {tableData.map((v) => {
+                  return <Row id={v.x} key={v.x} itm={v} />;
                 })}
+                {/* {(() => {
+                  const rev = [...chartData].reverse();
+                  return rev.map((v) => {
+                    return <Row id={v.period} key={v.period} itm={v} />;
+                  });
+                })()} */}
               </TableBody>
             </Table>
           </TableContainer>

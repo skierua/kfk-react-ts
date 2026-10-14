@@ -1,11 +1,19 @@
-import { useMemo } from 'react';
-import Box from '@mui/material/Box';
+import { useMemo, useState } from 'react';
+import Box, { type BoxProps } from '@mui/material/Box';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 
 import { BalanceComponent } from '../share/Balance';
-import { RateComponent } from '../share/Rate';
+import { RateTable_test } from '../share/Rate';
 import { OfferComponent } from '../share/Offer';
-import { useUserStore } from '../store/useUserStore';
 import { balanceDataset } from '../lib/balance';
+import { VkToggle, type VkToggleDataType } from '../share/VkToggle';
+
+import { APP_CONFIG } from '../const';
+
+import { useInfoStore } from '../store/useInfoStore';
+import { useUserStore } from '../store/useUserStore';
+import { foreignDataset } from '../lib/currencies';
 
 export const DashBoard = ({ ...other }: any) => {
   const { lastShift, balance } = useUserStore();
@@ -103,7 +111,7 @@ export const DashBoard = ({ ...other }: any) => {
         <Box className="adm-dash-container-title-wrapper">
           <Box className="adm-dash-container-title">Rates</Box>
         </Box>
-        <RateComponent showFlag={false} curSortFilter={30} />
+        <RateWrapper />
       </Box>
       <Box
         className="adm-dash-container"
@@ -116,6 +124,80 @@ export const DashBoard = ({ ...other }: any) => {
         </Box>
         <OfferComponent mode="table" showFilter={true} />
       </Box>
+    </Box>
+  );
+};
+
+const RateWrapper = ({ ...other }: BoxProps) => {
+  const kntInfo = useInfoStore((state) => state.shops);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const [bulk, setBulk] = useState(true);
+  const [knt, setKnt] = useState('');
+
+  const kntToggleList = useMemo((): VkToggleDataType[] => {
+    return Object.values(kntInfo)
+      .filter((v) =>
+        bulk
+          ? v.name === String(APP_CONFIG.BULK || '')
+          : v.name !== String(APP_CONFIG.BULK || ''),
+      )
+      .sort((a, b) => Number(a.so) - Number(b.so))
+      .map((v) => ({
+        id: v.name,
+        sname: v.name,
+      }));
+  }, [kntInfo, bulk]);
+
+  const kntFilter = useMemo(() => {
+    if (bulk) {
+      return [APP_CONFIG.BULK];
+    } else {
+      return !!knt ? [knt] : kntToggleList.map((v) => v.id);
+    }
+    return [];
+  }, [bulk, knt, kntToggleList]);
+
+  const curList = useMemo((): string[] => {
+    return foreignDataset(Object.values(crnInfo))
+      .filter((v) => Number(v.so) < 30)
+      .map((v) => v.id);
+  }, [crnInfo]);
+
+  return (
+    <Box {...other}>
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingY: 1,
+        }}
+      >
+        <VkToggle
+          data={kntToggleList}
+          dflt={knt}
+          label="Кантор"
+          limit={3}
+          fcb={(v) => setKnt(v)}
+        />
+        <FormControlLabel
+          control={<Switch />}
+          sx={{ size: 'small' }}
+          label="ГУРТ"
+          checked={bulk}
+          onChange={(_e, checked) => {
+            // setKnt(checked ? APP_CONFIG.BULK : '');
+            setBulk(checked);
+            setKnt('');
+          }}
+        />
+      </Box>
+
+      <RateTable_test
+        curFilter={curList}
+        kntFilter={kntFilter}
+        showFlag={false}
+      />
     </Box>
   );
 };

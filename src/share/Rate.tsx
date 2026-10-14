@@ -1,326 +1,43 @@
-import { useState, useMemo } from 'react';
-import Alert from '@mui/material/Alert';
-import Avatar from '@mui/material/Avatar';
+import { useEffect, useMemo } from 'react';
 import Box, { type BoxProps } from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Paper from '@mui/material/Paper';
-import Switch from '@mui/material/Switch';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableContainer, {
   type TableContainerProps,
 } from '@mui/material/TableContainer';
 import TableCell, { type TableCellProps } from '@mui/material/TableCell';
-import TableHead, { type TableHeadProps } from '@mui/material/TableHead';
+import TableHead from '@mui/material/TableHead';
 import TableFooter, { type TableFooterProps } from '@mui/material/TableFooter';
 import TableRow, { type TableRowProps } from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import IconButton from '@mui/material/IconButton';
-import ShareIcon from '@mui/icons-material/Share';
-
 import { grey } from '@mui/material/colors';
-const colorset = ['#f2f2f2', '#57ba98', grey[800]];
 
-import { useDataStore } from '../store/useDataStore';
-import type { DbRateType } from '../store/DbTypes';
-import { VkToggle, type VkToggleDataType } from './VkToggle';
 import { APP_CONFIG } from '../const';
+import type { RateType } from '../lib/types';
+import { ratesDataset } from '../lib/rates';
 
-interface iRateDataset {
-  data: DbRateType[];
-  kantFilter?: string;
-  sortFilter?: number;
-  typeFilter?: number;
-}
-const ratesDataset = ({
-  data,
-  kantFilter,
-  sortFilter,
-  typeFilter,
-}: iRateDataset): DbRateType[] => {
-  //   console.log(
-  //     'kantF=',
-  //     kantFilter,
-  //     ' sortF=',
-  //     sortFilter,
-  //     ' typeF=',
-  //     typeFilter,
-  //   );
-  return data.filter((v) => {
-    const matchesSort = sortFilter ? v.sortorder < sortFilter : true;
-    const matchesType = typeFilter ? v.domestic === typeFilter : true;
+import { useInfoStore } from '../store/useInfoStore';
+import { useRateStore } from '../store/useRateStore';
 
-    if (!matchesSort || !matchesType) return false;
-
-    if (kantFilter) {
-      return v.shop === kantFilter;
-    }
-
-    return v.shop !== APP_CONFIG.BULK;
-    //    if (kantFilter) {
-    //       return (
-    //         v.shop === kantFilter &&
-    //         ((sortFilter && v.sortorder < sortFilter) ||
-    //           (typeFilter && v.domestic === typeFilter))
-    //       );
-    //     }
-    //     return (
-    //       v.shop !== APP_CONFIG.BULK &&
-    //       ((sortFilter && v.sortorder < sortFilter) ||
-    //         (typeFilter && v.domestic === typeFilter))
-    //     );
-  });
-};
-
-const kantFromBalanceForToggle = (data: DbRateType[]): VkToggleDataType[] => {
-  return data
-    .filter(
-      (value, index, array) =>
-        array.findIndex((v) => v.shop === value.shop) === index,
-    )
-    .map((v) => {
-      return { id: v.shop, sname: v.shop, name: v.shop };
-    });
-};
-
-interface RateComponentProps extends BoxProps {
-  showFlag?: boolean;
-  curSortFilter?: number;
-  kantFilter?: string;
-  curTypeFilter?: number;
-  showFilter?: boolean;
-}
-
-export const RateComponent = ({
-  showFlag,
-  curSortFilter,
-  showFilter = true,
-  kantFilter,
-  curTypeFilter,
-  ...other
-}: RateComponentProps) => {
-  const [knt, setKnt] = useState(kantFilter ?? '');
-  const [bulk, setBulk] = useState(false);
-  //   const [sortFilter, _setSortFilter] = useState(curSortFilter);
-  const rawRates = useDataStore((state) => state.rates);
-
-  const dataset: DbRateType[] = useMemo(() => {
-    // const flt = viewMode === 'tiny' ? 30 : undefined; // include only main currencies
-    // const sortFilter = knt === APP_CONFIG.BULK ? 1000 : curSortFilter;
-    return ratesDataset({
-      data: rawRates,
-      kantFilter: knt,
-      sortFilter: curSortFilter,
-      typeFilter: curTypeFilter,
-    });
-  }, [rawRates, knt, curSortFilter, curTypeFilter]);
-
-  const kantToggleList: VkToggleDataType[] = useMemo(() => {
-    return kantFromBalanceForToggle(
-      bulk
-        ? rawRates.filter((v) => v.shop === APP_CONFIG.BULK)
-        : rawRates.filter((v) => v.shop !== APP_CONFIG.BULK),
-    );
-  }, [rawRates, bulk]);
-
-  return (
-    <Box {...other}>
-      {showFilter && (
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            paddingY: 1,
-          }}
-        >
-          <VkToggle
-            data={kantToggleList}
-            dflt={knt}
-            label="Кантор"
-            limit={3}
-            fcb={(v) => setKnt(v)}
-          />
-          <FormControlLabel
-            control={<Switch />}
-            sx={{ size: 'small' }}
-            label="ГУРТ"
-            checked={bulk}
-            onChange={(_e, checked) => {
-              setKnt(checked ? APP_CONFIG.BULK : '');
-              setBulk(checked);
-            }}
-          />
-        </Box>
-      )}
-
-      <RateTable
-        data={dataset.filter((v) => !knt || v.shop === knt)}
-        showCSub={knt === APP_CONFIG.BULK}
-        showKant={kantToggleList.length > 1}
-        showFlag={showFlag}
-      />
-    </Box>
-  );
-};
-
-interface RateWrapperProps {
-  data: DbRateType[];
-  maxTime?: string;
-  wtitle?: string;
-  wfooter?: string;
-  tblfooter?: string;
-  showFlag?: boolean;
-  funcPublish?: () => void;
-}
-export const RateWrapper = ({
-  data,
-  maxTime,
-  wtitle,
-  wfooter,
-  tblfooter,
-  showFlag,
-  funcPublish,
-  ...other
-}: RateWrapperProps & BoxProps) => {
-  const showKant = useMemo(() => {
-    const uniqueKants = new Set(data.map((v) => v.shop));
-    return uniqueKants.size > 1;
-  }, [data]);
-
-  return (
-    <Box className="adm-dash-container" {...other}>
-      {(wtitle || maxTime) && (
-        <Box className="adm-dash-container-title-wrapper">
-          <Box
-            sx={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            {funcPublish && !showKant && (
-              <IconButton
-                size="small"
-                color="primary"
-                // disabled={!share}
-                onClick={funcPublish}
-              >
-                <ShareIcon />
-              </IconButton>
-            )}
-            {wtitle && <div className="adm-dash-container-title">{wtitle}</div>}
-          </Box>
-          {maxTime && (
-            <div className="adm-dash-container-title-tm">{maxTime}</div>
-          )}
-        </Box>
-      )}
-
-      <RateTable
-        data={data}
-        showCSub={true}
-        footer={tblfooter}
-        showFlag={showFlag}
-        showKant={showKant}
-      />
-      {wfooter && <Alert severity="info">{wfooter}</Alert>}
-    </Box>
-  );
-};
-
-interface RateTableProps extends TableContainerProps {
-  data: DbRateType[];
-  showTitle?: boolean;
-  footer?: string;
-  showFlag?: boolean;
-  showCSub?: boolean;
-  showKant?: boolean;
-}
-
-export const RateTable = (props: RateTableProps) => {
-  const {
-    data,
-    showTitle,
-    footer,
-    showFlag = true,
-    showCSub = false,
-    showKant = false,
-    ...other
-  } = props;
-  return (
-    <TableContainer
-      component={Paper}
-      // sx={{ overflowX: 'auto', width: '100%' }}
-      {...other}
-    >
-      <Table
-        size="small"
-        aria-label="a dense table"
-        sx={{
-          // width: '100%',
-          minWidth: 'auto', // скасовуємо стандартні 650px
-          tableLayout: { xs: 'fixed', sm: 'auto' }, // (опційно) змушує колонки підлаштовуватися під 100%
-        }}
-      >
-        {showTitle && <RateTableHead />}
-        <TableBody>
-          {data.map((v) => {
-            return (
-              (Number(v.bid) !== 0 || Number(v.ask) !== 0) && (
-                <RateRow
-                  // className="rates-table-row"
-                  id={`${v.shop}-${v.atclcode}-${v.scode}`}
-                  key={`${v.shop}-${v.atclcode}-${v.scode}`}
-                  // sub={showCSub}
-                  // rate={v}
-                  code={v.atclcode}
-                  chid={v.chid}
-                  flag={(showFlag ?? true) ? v.atclcode : undefined}
-                  sname={showCSub ? v.sname : undefined}
-                  kant={showKant ? v.shop : undefined}
-                  bid={Number(v.bid)}
-                  ask={Number(v.ask)}
-                />
-              )
-            );
-          })}
-        </TableBody>
-        {footer && <RateTableFooter footer={footer} />}
-      </Table>
-    </TableContainer>
-  );
-};
-
-const RateTableHead = ({ ...other }: TableHeadProps) => {
-  return (
-    <TableHead {...other}>
-      <TableRow>
-        <TableCell align="center" padding={'none'}>
-          <Typography sx={{ fontSize: '0.9rem', color: grey[500] }}>
-            назва
-          </Typography>
-        </TableCell>
-        <TableCell
-          align="center"
-          padding={'none'}
-          // width={"18%"}
-          sx={{ bgcolor: colorset[0] }}
-        >
-          <Typography sx={{ fontSize: '0.9rem', color: grey[500] }}>
-            купівля
-          </Typography>
-        </TableCell>
-        <TableCell
-          align="center"
-          padding={'none'}
-          // width={"18%"}
-          sx={{ bgcolor: colorset[0] }}
-        >
-          <Typography sx={{ fontSize: '0.9rem', color: grey[500] }}>
-            продаж
-          </Typography>
-        </TableCell>
-      </TableRow>
-    </TableHead>
-  );
+const transformFromDb = (v: any, cur: any, sub?: any, shop?: any): RateType => {
+  return {
+    ...v,
+    bid: Number(v.bid),
+    ask: Number(v.ask),
+    chid: cur?.chid ?? '',
+    name: cur?.name ?? '',
+    cqty: Number(cur?.qty ?? 1),
+    rqty: Number(v.qty ?? 1),
+    symb: cur?.symb ?? '',
+    flag: cur?.flag ?? '🏳️',
+    sortorder: Number(cur?.so || 999),
+    domestic: Number(cur?.dmst || 0),
+    sname: APP_CONFIG.BULK === v.shop ? (sub?.sname ?? '') : '',
+    prc: String(v.prc ?? ''),
+    shopSortOrder: Number(shop?.so ?? 99),
+  };
 };
 
 const RateTableFooter = ({
@@ -339,23 +56,15 @@ const RateTableFooter = ({
 };
 
 interface RateRowProps extends TableRowProps {
-  code: string;
-  chid: string;
-  flag?: string;
-  sname?: string;
-  kant?: string;
-  bid: number;
-  ask: number;
+  rate: RateType;
+  dispFlag?: boolean;
+  dispKant?: boolean;
 }
 
 export const RateRow = ({
-  code,
-  chid,
-  flag,
-  sname,
-  kant,
-  bid,
-  ask,
+  rate,
+  dispFlag = true,
+  dispKant = true,
   ...other
 }: RateRowProps) => {
   return (
@@ -375,29 +84,19 @@ export const RateRow = ({
           padding: '8px 4px',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-          {flag && (
-            <Box
-              component="img"
-              sx={{
-                height: '1.4rem', //{ xs: "1rem", sm: "3vmin" },
-                // width: "32px",
-                maxHeight: { xs: 233, sm: 167 },
-                // maxWidth: { xs: 350, sm: 250 },
-                border: 'solid lightgrey 1px',
-                borderRadius: 1,
-              }}
-              alt={chid}
-              src={`/flag/${flag}.svg`}
-            />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {dispFlag && (
+            <Typography variant="h5" sx={{ lineHeight: 1 }}>
+              {rate.flag}
+            </Typography>
           )}
-          <div>{chid}</div>
-          {kant && <div style={{ fontSize: '0.8rem' }}>{kant}</div>}
-          {sname && <div style={{ fontSize: '0.7rem' }}>{sname}</div>}
+          <div>{rate.chid}</div>
+          {dispKant && <div style={{ fontSize: '0.8rem' }}>{rate.shop}</div>}
+          <div style={{ fontSize: '0.7rem' }}>{rate.sname}</div>
         </Box>
       </TableCell>
-      <RateCell amnt={bid} />
-      <RateCell amnt={ask} />
+      <RateCell amnt={rate.bid} />
+      <RateCell amnt={rate.ask} />
     </TableRow>
   );
 };
@@ -420,45 +119,156 @@ const RateCell = ({ amnt, ...other }: { amnt: number } & TableCellProps) => {
   );
 };
 
-export const Rate4Element = ({
-  data,
+interface RatePoolProps extends BoxProps {
+  kantFilter?: string;
+  curFilter?: string;
+  cursubFilter?: string;
+  sortFilter?: number;
+  typeFilter?: number;
+  wtitle?: string;
+}
+
+export const RatePool = ({
+  kantFilter,
+  curFilter,
+  cursubFilter,
+  sortFilter,
+  typeFilter,
+  wtitle,
   ...other
-}: { data: DbRateType } & BoxProps) => {
+}: RatePoolProps) => {
+  const rawRates = useRateStore((state) => state.dataset);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const subInfo = useInfoStore((state) => state.cursubmap);
+  const subvalue = useInfoStore((state) => state.subvalue);
+
+  const transformedData: RateType[] = useMemo(() => {
+    const res = rawRates
+      .filter((v) => {
+        return Number(v.bid || 0) !== 0;
+      })
+      .map((v): RateType => {
+        const cur = crnInfo[v.atclcode];
+        const sub = subvalue(v.atclcode, String(v.scode || ''));
+        return transformFromDb(v, cur, sub);
+      })
+      .sort((a, b) => {
+        return (
+          Number(a.sortorder) - Number(b.sortorder) ||
+          Number(a.scode) - Number(b.scode)
+        );
+      });
+    return ratesDataset({
+      data: res,
+      kantFilter: kantFilter,
+      typeFilter: typeFilter,
+    });
+  }, [rawRates, crnInfo, subInfo, subvalue, kantFilter, typeFilter]);
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.3rem',
-        fontSize: '0.85rem',
-      }}
-      {...other}
-    >
-      <Avatar
-        src={`/flag/${data.atclcode}.svg`}
+    <Box className="adm-dash-container" {...other}>
+      <Box className="adm-dash-container-title-wrapper">
+        <Box className="adm-dash-container-title">
+          {wtitle ?? 'РОЗДРІБ. купівля'}
+        </Box>
+      </Box>
+      <Box
+        component={Paper}
         sx={{
-          width: '1.2rem',
-          height: '1.2rem',
-          border: 'solid lightgrey 1px',
+          width: { xs: 'auto', sm: '360px' },
+          display: 'flex',
+          padding: '5px',
+          gap: 1,
+          flexWrap: 'wrap',
         }}
-      />
-      {data.chid}&nbsp; {data.bid.toPrecision(data.bid < 1 ? 3 : 4)}
+      >
+        {transformedData.map((v) => {
+          return (
+            <Box
+              id={v.shop + '-' + v.atclcode}
+              key={v.shop + '-' + v.atclcode}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                fontSize: '0.85rem',
+              }}
+              {...other}
+            >
+              <Typography variant="h6" sx={{ lineHeight: 1 }}>
+                {v.flag}
+              </Typography>
+              {` ${v.chid} ${v.bid.toPrecision(v.bid < 1 ? 3 : 4)}`}
+              {/* {v.chid}&nbsp; {v.bid.toPrecision(v.bid < 1 ? 3 : 4)} */}
+            </Box>
+          );
+        })}
+      </Box>
     </Box>
   );
 };
 
-export interface CrossTableDataType {
-  base: DbRateType;
-  direct?: DbRateType[]; // direct conversion rates (base -> target)
-  reverse?: DbRateType[]; // reverse conversion rates (target -> base)
-}
+export const CrossTable = ({ subcode, ...other }: { subcode: string }) => {
+  const rawRates = useRateStore((state) => state.dataset);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const subInfo = useInfoStore((state) => state.cursubmap);
+  const subvalue = useInfoStore((state) => state.subvalue);
 
-interface CrossTableProps extends TableContainerProps {
-  title?: string;
-  data: CrossTableDataType;
-}
+  const title = useMemo(() => {
+    const sub = subvalue(APP_CONFIG.CURID, String(subcode || ''));
+    return sub?.sname || '';
+  }, [subInfo]);
 
-export const CrossTable = ({ title, data, ...other }: CrossTableProps) => {
+  const rateUSD = useMemo(() => {
+    return rawRates.find(
+      (v) =>
+        v.shop === APP_CONFIG.BULK &&
+        v.atclcode === APP_CONFIG.CURID &&
+        v.scode === subcode,
+    );
+  }, [rawRates]);
+
+  const rateEUR = useMemo(() => {
+    return rawRates.find(
+      (v) => v.shop === APP_CONFIG.BULK && v.atclcode === '978' && !v.scode,
+    );
+  }, [rawRates]);
+
+  const ratePLN = useMemo(() => {
+    return rawRates.find(
+      (v) => v.shop === APP_CONFIG.BULK && v.atclcode === '985' && !v.scode,
+    );
+  }, [rawRates]);
+
+  const dataset_0 = useMemo(() => {
+    return [
+      [rateEUR, rateUSD],
+      [rateUSD, ratePLN],
+    ].map((v) => {
+      const bidbid =
+        (v[1]?.bid ?? 0) !== 0 ? (v[0]?.bid ?? 0) / (v[1]?.bid ?? 1) : 0;
+      const askbid =
+        (v[1]?.bid ?? 0) !== 0 ? (v[0]?.ask ?? 0) / (v[1]?.bid ?? 1) : 0;
+      const bidask =
+        (v[1]?.ask ?? 0) !== 0 ? (v[0]?.bid ?? 0) / (v[1]?.ask ?? 1) : 0;
+      const askask =
+        (v[1]?.ask ?? 0) !== 0 ? (v[0]?.ask ?? 0) / (v[1]?.ask ?? 1) : 0;
+      const curid = String(v[0]?.atclcode ?? '') + String(v[1]?.atclcode ?? '');
+      const cur = crnInfo[curid];
+      return {
+        id: curid,
+        chid: cur?.chid ?? '',
+        scode: '',
+        name: cur?.name ?? '',
+        flag: cur?.flag ?? '🏳️',
+        domestic: Number(cur?.dmst || 0),
+        bidbid: bidbid,
+        bidask: bidask,
+        askbid: askbid,
+        askask: askask,
+      };
+    });
+  }, [rateUSD, rateEUR, ratePLN]);
+  // console.log('dataset_0', dataset_0);
   return (
     <TableContainer
       component={Paper}
@@ -481,119 +291,168 @@ export const CrossTable = ({ title, data, ...other }: CrossTableProps) => {
                 {title ?? 'Назва'}
               </Typography>
             </TableCell>
+            <TableCell></TableCell>
             <TableCell align="center" padding={'none'}>
               <Box
                 sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
               >
-                <Typography variant="caption">bid/bid</Typography>
-                <Typography variant="caption">bid/ask</Typography>
+                <Typography variant="caption">bid/?</Typography>
+                {/* <Typography variant="caption">ask</Typography> */}
               </Box>
             </TableCell>
             <TableCell align="center" padding={'none'}>
               <Box
                 sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
               >
-                <Typography variant="caption">ask/bid</Typography>
-                <Typography variant="caption">ask/ask</Typography>
+                <Typography variant="caption">ask/?</Typography>
+                {/* <Typography variant="caption">ask/ask</Typography> */}
               </Box>
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {data.reverse &&
-            data.reverse.map((v) => {
-              return (
-                <TableRow key={`rev-${v.shop}-${v.atclcode}-${v.scode}`}>
-                  <TableCell align="center" padding={'none'}>
-                    {`${v.chid}>${data.base.chid}`}
-                  </TableCell>
-                  <TableCell align="center" padding={'none'}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                      }}
-                    >
-                      <Typography variant="body2">
-                        {(
-                          (v.bid * data.base.rqty) /
-                          (data.base.bid * v.rqty)
-                        ).toFixed(4)}
-                      </Typography>
-                      <Typography variant="body2">
-                        {(
-                          (v.bid * data.base.rqty) /
-                          (data.base.ask * v.rqty)
-                        ).toFixed(4)}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center" padding={'none'}>
-                    <Typography variant="body2">
-                      {(
-                        (v.ask * data.base.rqty) /
-                        (data.base.bid * v.rqty)
-                      ).toFixed(4)}
-                    </Typography>
-                    <Typography variant="body2">
-                      {(
-                        (v.ask * data.base.rqty) /
-                        (data.base.ask * v.rqty)
-                      ).toFixed(4)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          {data.direct &&
-            data.direct.map((v) => {
-              return (
-                <TableRow key={`rev-${v.shop}-${v.atclcode}-${v.scode}`}>
-                  <TableCell align="center" padding={'none'}>
-                    {`${data.base.chid}>${v.chid}`}
-                  </TableCell>
-                  <TableCell align="center" padding={'none'}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                      }}
-                    >
-                      <Typography variant="body2">
-                        {(
-                          (data.base.bid * v.rqty) /
-                          (v.bid * data.base.rqty)
-                        ).toFixed(4)}
-                      </Typography>
-                      <Typography variant="body2">
-                        {(
-                          (data.base.bid * v.rqty) /
-                          (v.ask * data.base.rqty)
-                        ).toFixed(4)}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center" padding={'none'}>
-                    <Typography variant="body2">
-                      {(
-                        (data.base.ask * v.rqty) /
-                        (v.bid * data.base.rqty)
-                      ).toFixed(4)}
-                    </Typography>
-                    <Typography variant="body2">
-                      {(
-                        (data.base.ask * v.rqty) /
-                        (v.ask * data.base.rqty)
-                      ).toFixed(4)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+          {dataset_0.map((v) => {
+            return (
+              <TableRow key={`rev-${v.id}-${v.scode}`}>
+                <TableCell align="center" padding={'none'}>
+                  {`${v.chid}`}
+                </TableCell>
+                <TableCell>
+                  <div>?/bid</div>
+                  <div>?/ask</div>
+                </TableCell>
+                <TableCell align="center" padding={'none'}>
+                  <div>{v.bidbid.toPrecision(5)}</div>
+                  <div>{v.bidask.toPrecision(5)}</div>
+                </TableCell>
+                <TableCell align="center" padding={'none'}>
+                  <div>{v.askbid.toPrecision(5)}</div>
+                  <div>{v.askask.toPrecision(5)}</div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
-        {/* {footer && <RateTableFooter footer={footer} />} */}
+      </Table>
+    </TableContainer>
+  );
+};
+
+interface RateTable_testProps extends TableContainerProps {
+  footer?: string;
+  showFlag?: boolean;
+  curFilter?: string[];
+  kntFilter?: string[];
+  tgPublish?: (data: RateType[]) => void;
+  onDataChange?: (data: any) => void;
+}
+
+export const RateTable_test = (props: RateTable_testProps) => {
+  const {
+    footer,
+    showFlag = true,
+    curFilter,
+    kntFilter,
+    onDataChange,
+    tgPublish = false,
+    ...other
+  } = props;
+  const rawRates = useRateStore((state) => state.dataset);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const subInfo = useInfoStore((state) => state.cursubmap);
+  const subvalue = useInfoStore((state) => state.subvalue);
+  const shopInfo = useInfoStore((state) => state.shops);
+  // console.log(
+  //   'RateTable_test: curFilter=',
+  //   curFilter,
+  //   ' kntFilter=',
+  //   kntFilter,
+  //   // 'rawRates=',
+  //   // rawRates,
+  // );
+
+  const dataset: RateType[] = useMemo(() => {
+    const res = rawRates
+      .filter((v) => {
+        const matchesCur =
+          curFilter && curFilter.length > 0
+            ? curFilter.includes(v.atclcode)
+            : true;
+        const matchesKnt =
+          kntFilter && kntFilter.length > 0 ? kntFilter.includes(v.shop) : true;
+        const matchesBidAsk =
+          Number(v.bid || 0) !== 0 || Number(v.ask || 0) !== 0;
+        return matchesCur && matchesKnt && matchesBidAsk;
+      })
+      .map((v): RateType => {
+        const cur = crnInfo[v.atclcode];
+        const sub = subvalue(v.atclcode, String(v.scode || ''));
+        const shop = shopInfo[v.shop] || { name: v.shop, so: 99 };
+        return transformFromDb(v, cur, sub, shop);
+      })
+      .sort((a, b) => {
+        return (
+          Number(a.sortorder) - Number(b.sortorder) ||
+          Number(a.scode) - Number(b.scode) ||
+          Number(a.shopSortOrder) - Number(b.shopSortOrder)
+        );
+      });
+    return res;
+  }, [rawRates, crnInfo, subInfo, subvalue, shopInfo, curFilter, kntFilter]);
+
+  const showKant = useMemo(() => {
+    const uniqueKants = new Set(dataset.map((v) => v.shop));
+    return uniqueKants.size > 1;
+  }, [dataset]);
+
+  useEffect(() => {
+    if (onDataChange) {
+      onDataChange(dataset);
+    }
+  }, [dataset, onDataChange]); // Спрацює ТІЛЬКИ коли масив реально змінився
+
+  if (!dataset || dataset.length === 0) {
+    return (
+      <Box sx={{ p: 2, textAlign: 'center', width: 'auto' }}>
+        <Typography variant="body2" color="text.secondary">
+          Немає актуальних курсів
+        </Typography>
+      </Box>
+    );
+  }
+  return (
+    <TableContainer
+      component={Paper}
+      // sx={{ overflowX: 'auto', width: '100%' }}
+      {...other}
+    >
+      <Table
+        size="small"
+        aria-label="a dense table"
+        sx={{
+          // width: '100%',
+          minWidth: 'auto', // скасовуємо стандартні 650px
+          tableLayout: { xs: 'fixed', sm: 'auto' }, // (опційно) змушує колонки підлаштовуватися під 100%
+        }}
+      >
+        {/* {showTitle && <RateTableHead />} */}
+        <TableBody>
+          {dataset.map((v) => {
+            return (
+              (Number(v.bid) !== 0 || Number(v.ask) !== 0) && (
+                <RateRow
+                  // className="rates-table-row"
+                  id={`${v.shop}-${v.atclcode}-${v.scode}`}
+                  key={`${v.shop}-${v.atclcode}-${v.scode}`}
+                  rate={v}
+                  dispFlag={showFlag}
+                  dispKant={showKant}
+                />
+              )
+            );
+          })}
+        </TableBody>
+        {footer && <RateTableFooter footer={footer} />}
       </Table>
     </TableContainer>
   );

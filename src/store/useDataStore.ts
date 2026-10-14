@@ -4,7 +4,7 @@ import type { DbRateType, DbOfferType } from './DbTypes';
 import { getData } from '../driver';
 // import { subscribe } from '../events';
 
-export interface DataState {
+export interface _DataState {
   rates: DbRateType[];
   isRatesLoading: boolean;
   isOffersLoading: boolean;
@@ -21,7 +21,7 @@ export interface DataState {
   setError: (error: string | null) => void;
 }
 
-export const useDataStore = create<DataState>((set, get) => ({
+export const useDataStore = create<_DataState>((set, get) => ({
   rates: [],
   offers: [],
   error: null,
