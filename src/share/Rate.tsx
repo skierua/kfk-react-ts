@@ -40,6 +40,126 @@ const transformFromDb = (v: any, cur: any, sub?: any, shop?: any): RateType => {
   };
 };
 
+interface RateTable_testProps extends TableContainerProps {
+  footer?: string;
+  showFlag?: boolean;
+  curFilter?: string[];
+  kntFilter?: string[];
+  tgPublish?: (data: RateType[]) => void;
+  onDataChange?: (data: any) => void;
+}
+
+export const RateTable_test = (props: RateTable_testProps) => {
+  const {
+    footer,
+    showFlag = true,
+    curFilter,
+    kntFilter,
+    onDataChange,
+    tgPublish = false,
+    ...other
+  } = props;
+  const rawRates = useRateStore((state) => state.dataset);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const subInfo = useInfoStore((state) => state.cursubmap);
+  const subvalue = useInfoStore((state) => state.subvalue);
+  const shopInfo = useInfoStore((state) => state.shops);
+  // console.log(
+  //   'RateTable_test: curFilter=',
+  //   curFilter,
+  //   ' kntFilter=',
+  //   kntFilter,
+  //   // 'rawRates=',
+  //   // rawRates,
+  // );
+
+  const dataset: RateType[] = useMemo(() => {
+    const res = rawRates
+      .filter((v) => {
+        const matchesCur =
+          curFilter && curFilter.length > 0
+            ? curFilter.includes(v.atclcode)
+            : true;
+        const matchesKnt =
+          kntFilter && kntFilter.length > 0 ? kntFilter.includes(v.shop) : true;
+        const matchesBidAsk =
+          Number(v.bid || 0) !== 0 || Number(v.ask || 0) !== 0;
+        return matchesCur && matchesKnt && matchesBidAsk;
+      })
+      .map((v): RateType => {
+        const cur = crnInfo[v.atclcode];
+        const sub = subvalue(v.atclcode, String(v.scode || ''));
+        const shop = shopInfo[v.shop] || { name: v.shop, so: 99 };
+        return transformFromDb(v, cur, sub, shop);
+      })
+      .sort((a, b) => {
+        return (
+          Number(a.sortorder) - Number(b.sortorder) ||
+          Number(a.scode) - Number(b.scode) ||
+          Number(a.shopSortOrder) - Number(b.shopSortOrder)
+        );
+      });
+    return res;
+  }, [rawRates, crnInfo, subInfo, subvalue, shopInfo, curFilter, kntFilter]);
+
+  const showKant = useMemo(() => {
+    const uniqueKants = new Set(dataset.map((v) => v.shop));
+    return uniqueKants.size > 1;
+  }, [dataset]);
+
+  useEffect(() => {
+    if (onDataChange) {
+      onDataChange(dataset);
+    }
+  }, [dataset, onDataChange]);
+
+  if (!dataset || dataset.length === 0) {
+    return (
+      <Box sx={{ p: 2, textAlign: 'center', width: 'auto' }}>
+        <Typography variant="body2" color="text.secondary">
+          Немає актуальних курсів
+        </Typography>
+      </Box>
+    );
+  }
+  return (
+    <TableContainer
+      component={Paper}
+      // sx={{ overflowX: 'auto', width: '100%' }}
+      {...other}
+    >
+      <Table
+        size="small"
+        aria-label="a dense table"
+        sx={{
+          // width: '100%',
+          minWidth: 'auto', // скасовуємо стандартні 650px
+          tableLayout: { xs: 'fixed', sm: 'auto' }, // (опційно) змушує колонки підлаштовуватися під 100%
+        }}
+      >
+        {/* {showTitle && <RateTableHead />} */}
+        <TableBody>
+          {dataset.map((v) => {
+            return (
+              (Number(v.bid) !== 0 || Number(v.ask) !== 0) && (
+                <RateRow
+                  // className="rates-table-row"
+                  id={`${v.shop}-${v.atclcode}-${v.scode}`}
+                  key={`${v.shop}-${v.atclcode}-${v.scode}`}
+                  rate={v}
+                  dispFlag={showFlag}
+                  dispKant={showKant}
+                />
+              )
+            );
+          })}
+        </TableBody>
+        {footer && <RateTableFooter footer={footer} />}
+      </Table>
+    </TableContainer>
+  );
+};
+
 const RateTableFooter = ({
   footer,
   ...other
@@ -333,126 +453,6 @@ export const CrossTable = ({ subcode, ...other }: { subcode: string }) => {
             );
           })}
         </TableBody>
-      </Table>
-    </TableContainer>
-  );
-};
-
-interface RateTable_testProps extends TableContainerProps {
-  footer?: string;
-  showFlag?: boolean;
-  curFilter?: string[];
-  kntFilter?: string[];
-  tgPublish?: (data: RateType[]) => void;
-  onDataChange?: (data: any) => void;
-}
-
-export const RateTable_test = (props: RateTable_testProps) => {
-  const {
-    footer,
-    showFlag = true,
-    curFilter,
-    kntFilter,
-    onDataChange,
-    tgPublish = false,
-    ...other
-  } = props;
-  const rawRates = useRateStore((state) => state.dataset);
-  const crnInfo = useInfoStore((state) => state.currencies);
-  const subInfo = useInfoStore((state) => state.cursubmap);
-  const subvalue = useInfoStore((state) => state.subvalue);
-  const shopInfo = useInfoStore((state) => state.shops);
-  // console.log(
-  //   'RateTable_test: curFilter=',
-  //   curFilter,
-  //   ' kntFilter=',
-  //   kntFilter,
-  //   // 'rawRates=',
-  //   // rawRates,
-  // );
-
-  const dataset: RateType[] = useMemo(() => {
-    const res = rawRates
-      .filter((v) => {
-        const matchesCur =
-          curFilter && curFilter.length > 0
-            ? curFilter.includes(v.atclcode)
-            : true;
-        const matchesKnt =
-          kntFilter && kntFilter.length > 0 ? kntFilter.includes(v.shop) : true;
-        const matchesBidAsk =
-          Number(v.bid || 0) !== 0 || Number(v.ask || 0) !== 0;
-        return matchesCur && matchesKnt && matchesBidAsk;
-      })
-      .map((v): RateType => {
-        const cur = crnInfo[v.atclcode];
-        const sub = subvalue(v.atclcode, String(v.scode || ''));
-        const shop = shopInfo[v.shop] || { name: v.shop, so: 99 };
-        return transformFromDb(v, cur, sub, shop);
-      })
-      .sort((a, b) => {
-        return (
-          Number(a.sortorder) - Number(b.sortorder) ||
-          Number(a.scode) - Number(b.scode) ||
-          Number(a.shopSortOrder) - Number(b.shopSortOrder)
-        );
-      });
-    return res;
-  }, [rawRates, crnInfo, subInfo, subvalue, shopInfo, curFilter, kntFilter]);
-
-  const showKant = useMemo(() => {
-    const uniqueKants = new Set(dataset.map((v) => v.shop));
-    return uniqueKants.size > 1;
-  }, [dataset]);
-
-  useEffect(() => {
-    if (onDataChange) {
-      onDataChange(dataset);
-    }
-  }, [dataset, onDataChange]); // Спрацює ТІЛЬКИ коли масив реально змінився
-
-  if (!dataset || dataset.length === 0) {
-    return (
-      <Box sx={{ p: 2, textAlign: 'center', width: 'auto' }}>
-        <Typography variant="body2" color="text.secondary">
-          Немає актуальних курсів
-        </Typography>
-      </Box>
-    );
-  }
-  return (
-    <TableContainer
-      component={Paper}
-      // sx={{ overflowX: 'auto', width: '100%' }}
-      {...other}
-    >
-      <Table
-        size="small"
-        aria-label="a dense table"
-        sx={{
-          // width: '100%',
-          minWidth: 'auto', // скасовуємо стандартні 650px
-          tableLayout: { xs: 'fixed', sm: 'auto' }, // (опційно) змушує колонки підлаштовуватися під 100%
-        }}
-      >
-        {/* {showTitle && <RateTableHead />} */}
-        <TableBody>
-          {dataset.map((v) => {
-            return (
-              (Number(v.bid) !== 0 || Number(v.ask) !== 0) && (
-                <RateRow
-                  // className="rates-table-row"
-                  id={`${v.shop}-${v.atclcode}-${v.scode}`}
-                  key={`${v.shop}-${v.atclcode}-${v.scode}`}
-                  rate={v}
-                  dispFlag={showFlag}
-                  dispKant={showKant}
-                />
-              )
-            );
-          })}
-        </TableBody>
-        {footer && <RateTableFooter footer={footer} />}
       </Table>
     </TableContainer>
   );

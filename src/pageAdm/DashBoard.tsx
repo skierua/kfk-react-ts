@@ -6,7 +6,7 @@ import Switch from '@mui/material/Switch';
 import { BalanceComponent } from '../share/Balance';
 import { RateTable_test } from '../share/Rate';
 import { OfferComponent } from '../share/Offer';
-import { balanceDataset } from '../lib/balance';
+// import { balanceDataset } from '../lib/balance';
 import { VkToggle, type VkToggleDataType } from '../share/VkToggle';
 
 import { APP_CONFIG } from '../const';
@@ -16,48 +16,12 @@ import { useUserStore } from '../store/useUserStore';
 import { foreignDataset } from '../lib/currencies';
 
 export const DashBoard = ({ ...other }: any) => {
-  const { lastShift, balance } = useUserStore();
-  const { appUser } = useUserStore();
+  // const { lastShift, balance } = useUserStore();
+  const appUser = useUserStore((state) => state.appUser);
 
-  const cashDataset = useMemo(() => {
-    if (!appUser) return [];
-    if (appUser.role === 'owner') {
-      return balanceDataset({
-        data: balance,
-        bal: '30',
-        sortFilter: 30,
-        shft: lastShift,
-      });
-    } else if (appUser.role === 'kant') {
-      return balanceDataset({
-        data: balance,
-        bal: '3000',
-        sortFilter: 30,
-        shft: lastShift,
-      }).filter((v) => v.shop === appUser.term);
-    }
-    return [];
-  }, [balance, lastShift]);
-
-  const inkasDataset = useMemo(() => {
-    if (!appUser) return [];
-    return balanceDataset({
-      data: balance,
-      bal: '3003',
-      sortFilter: 30,
-      shft: lastShift,
-    });
-  }, [balance, lastShift]);
-
-  const tradeDataset = useMemo(() => {
-    if (!appUser) return [];
-    return balanceDataset({
-      data: balance,
-      bal: '35',
-      sortFilter: 30,
-      shft: lastShift,
-    });
-  }, [balance, lastShift]);
+  const cashAcnt: string = useMemo(() => {
+    return String(appUser?.role || '') === 'owner' ? '30' : '3000';
+  }, [appUser]);
 
   return (
     // <Box sx={{ display: "flex", flexWrap: "wrap" }} {...other}>
@@ -74,7 +38,7 @@ export const DashBoard = ({ ...other }: any) => {
             <Box className="adm-dash-container-title-wrapper">
               <Box className="adm-dash-container-title">TRADE</Box>
             </Box>
-            <BalanceComponent data={tradeDataset} />
+            <BalanceComponent balAcnt={'35'} />
           </Box>
           <Box
             className="adm-dash-container"
@@ -85,9 +49,9 @@ export const DashBoard = ({ ...other }: any) => {
             <Box className="adm-dash-container-title-wrapper">
               <Box className="adm-dash-container-title">Cash</Box>
             </Box>
-            <BalanceComponent data={cashDataset} />
+            <BalanceComponent balAcnt={cashAcnt} />
           </Box>
-          <Box
+          {/* <Box
             className="adm-dash-container"
             sx={{
               width: { xs: '100%', sm: 'auto' },
@@ -98,8 +62,8 @@ export const DashBoard = ({ ...other }: any) => {
                 Внутрішня інкасація
               </Box>
             </Box>
-            <BalanceComponent data={inkasDataset} />
-          </Box>
+            <BalanceComponent balAcnt={'3003'} />
+          </Box> */}
         </>
       )}
       <Box
