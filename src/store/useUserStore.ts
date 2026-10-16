@@ -86,6 +86,52 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ error: null });
     try {
       const balanceData = await postData<DbBalanceType[]>(
+        // '/accounts',
+        '/balance',
+        // get().token ?? '',
+        // JSON.stringify({ reqid: 'sel' }),
+        JSON.stringify({ reqid: 'sel', shop: ['BULK', 'CITY', 'FEYA'] }),
+      );
+      // console.log('balanceData=', balanceData);
+      let shft = new Date().toISOString().split('T')[0];
+      if (balanceData.length) {
+        const maxTm = balanceData.reduce(
+          (max, v) => (v.tm > max ? v.tm : max),
+          '',
+        );
+        if (maxTm.includes('T')) shft = maxTm.split('T')[0];
+      }
+      const sortedBalance = [...balanceData]
+        // .sort(
+        //   (a, b) =>
+        //     Number(a.cuso) - Number(b.cuso) ||
+        //     a.acntno.localeCompare(b.acntno) ||
+        //     Number(a.shso) - Number(b.shso),
+        // )
+        .map((v): DbBalanceType => {
+          return {
+            ...v,
+            amnt: Number(v.amnt),
+            turndbt: Number(v.turndbt),
+            turncdt: Number(v.turncdt),
+          };
+        });
+      set({
+        balance: sortedBalance,
+        lastShift: shft,
+        // isPubDataLoading: false,
+        error: null,
+      });
+    } catch (err: any) {
+      console.error(err.message);
+      set({ error: err.message });
+    }
+  },
+
+  /*  fetchBalance: async () => {
+    set({ error: null });
+    try {
+      const balanceData = await postData<DbBalanceType[]>(
         '/accounts',
         // get().token ?? '',
         JSON.stringify({ reqid: 'sse' }),
@@ -126,7 +172,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       console.error(err.message);
       set({ error: err.message });
     }
-  },
+  },*/
 
   refreshBalance: (intervalMs) => {
     // console.log('intervalMs=', intervalMs);

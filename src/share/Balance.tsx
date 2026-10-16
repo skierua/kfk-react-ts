@@ -20,30 +20,54 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // import ExpandLessIcon from '@mui/icons-material/ExpandMore';
 
 import { VkToggle } from './VkToggle';
-import { useUserStore } from '../store/useUserStore';
 import { humanDate } from '../lib/common';
 import {
   kantFromBalanceForToggle,
   acntFromBalanceForToggle,
 } from '../lib/balance';
 
-import type { DbBalanceType } from '../store/DbTypes';
+import { useUserStore } from '../store/useUserStore';
+import { useInfoStore } from '../store/useInfoStore';
+
+import type {
+  DbBalanceType,
+  DbCurrencyType,
+  DbShopType,
+} from '../store/DbTypes';
 
 // Описуємо структуру для групи
-interface BalanceRowType {
+interface BalanceObjRowType {
   name: string;
   totalAmount: number;
   income: number;
   outcome: number;
   maxTime: string;
-  details: DbBalanceType[];
+  details: BalanceRowType[];
 }
 
-const transformBalanceForTable = (data: DbBalanceType[]): BalanceRowType[] => {
-  const { lastShift } = useUserStore();
-  const groups: { [key: string]: BalanceRowType } = {};
+interface BalanceRowType {
+  acntno: string;
+  atclcode: string;
+  amnt: number;
+  chid: string; // "USD"
+  curName?: string; //
+  cuso: number; // currency sort order
+  curType: number; // "2"
+  scancode?: string; //
+  shso: number; // shop sort order
+  turndbt: number;
+  turncdt: number;
+  shop: string;
+  tm: string;
+}
+
+const transformBalanceForTable = (
+  data: BalanceRowType[],
+): BalanceObjRowType[] => {
+  const lastShift = useUserStore((state) => state.lastShift);
+  const groups: { [key: string]: BalanceObjRowType } = {};
   data
-    .map((v): DbBalanceType => {
+    .map((v): BalanceRowType => {
       if (!v.acntno.startsWith('30')) {
         return {
           ...v,
@@ -55,7 +79,7 @@ const transformBalanceForTable = (data: DbBalanceType[]): BalanceRowType[] => {
       return v;
     })
     .forEach((v) => {
-      const key = v.cuso; // або інше поле, за яким групуєте
+      const key = v.chid; // або інше поле, за яким групуєте
       if (!groups[key]) {
         groups[key] = {
           name: v.chid,
@@ -78,60 +102,132 @@ const transformBalanceForTable = (data: DbBalanceType[]): BalanceRowType[] => {
   return Object.values(groups);
 };
 
-interface BalanceComponentProps extends BoxProps {
-  data: DbBalanceType[];
-  allowFilter?: boolean;
-}
+const buildBalanceRow = (
+  v: DbBalanceType,
+  cur: DbCurrencyType,
+  shop?: DbShopType,
+): BalanceRowType => {
+  return {
+    ...v,
+    chid: cur?.chid ?? '',
+    curName: cur?.name ?? '',
+    curType: cur?.dmst ?? 0,
+    scancode: '',
+    cuso: Number(cur?.so || 999), // currency sort order
+    shso: Number(shop?.so ?? 99), // shop sort order
+  };
+};
 
 export const BalanceComponent = ({
-  data,
-  allowFilter = true,
+  balAcnt,
+  activeOnly = true,
   ...other
-}: BalanceComponentProps) => {
+}: { balAcnt: string; activeOnly?: boolean } & BoxProps) => {
+  const appUser = useUserStore((state) => state.appUser);
+  const rawData = useUserStore((state) => state.balance);
+  const crnInfo = useInfoStore((state) => state.currencies);
+  const shopInfo = useInfoStore((state) => state.shops);
+  const lastShift = useUserStore((state) => state.lastShift);
+  // const [balAcnt, setBalAcnt] = useState(String(balAcnt));
   const [knt, setKnt] = useState('');
   const [acnt, setAcnt] = useState('');
-  const [sourceData, setSourceData] = useState<DbBalanceType[]>(data);
+  // const [sourceData, setSourceData] = useState<DbBalanceType[]>(data);
 
   useEffect(() => {
-    setSourceData(data);
+    setKnt('');
+    setAcnt('');
     // console.log('BalanceComponent useEffect: data=', data);
-  }, [data]);
+  }, [balAcnt]);
+
+  const balData: BalanceRowType[] = useMemo(() => {
+    if (!rawData || rawData.length === 0) return [];
+
+    const curSet = !!activeOnly
+      ? new Set(
+          Object.values(crnInfo)
+            .filter((c) => (c.dmst & 3) !== 0)
+            .map((c) => c.id),
+        )
+      : null;
+
+    if (!!curSet) {
+      rawData.forEach((v) => {
+        if (v.tm.startsWith(lastShift)) curSet.add(v.atclcode);
+      });
+    }
+
+    const res = rawData
+      .filter((v) => {
+        const matchesBal = !balAcnt || v.acntno.startsWith(balAcnt);
+
+        const matchesZero = v.amnt !== 0 || v.turndbt !== 0 || v.turncdt !== 0;
+
+        const matchesCur = curSet ? curSet.has(v.atclcode) : true;
+
+        const userRole = appUser?.role || '';
+        const userTerm = appUser?.term || '';
+        const matcheShop =
+          userRole === 'owner' ||
+          userTerm === v.shop ||
+          v.acntno.startsWith('3003') ||
+          v.acntno.startsWith('35');
+
+        return matchesBal && matchesZero && matchesCur && matcheShop;
+      })
+      .map((v): BalanceRowType => {
+        const cur = crnInfo[v.atclcode];
+        const shop = shopInfo[v.shop] || { name: v.shop, so: 99 };
+        return buildBalanceRow(v, cur, shop);
+      })
+      .sort((a, b) => {
+        // Якщо cuso, shso є числами, Number() можна прибрати для швидкості
+        return (
+          Number(a.curType) - Number(b.curType) ||
+          Number(a.cuso) - Number(b.cuso) ||
+          Number(a.shso) - Number(b.shso) ||
+          a.acntno.localeCompare(b.acntno)
+        );
+      });
+
+    return res;
+  }, [rawData, balAcnt, crnInfo, shopInfo, appUser, lastShift, activeOnly]);
+
+  // console.log(balData);
+
   const dataset = useMemo(() => {
-    return sourceData.filter(
+    return balData.filter(
       (v) => (!knt || knt === v.shop) && (!acnt || v.acntno.startsWith(acnt)),
     );
-  }, [knt, acnt, sourceData]);
+  }, [balData, knt, acnt]);
 
-  const kantToggleList = () => kantFromBalanceForToggle(sourceData);
-  const acntToggleList = () => acntFromBalanceForToggle(sourceData);
+  const kantToggleList = () => kantFromBalanceForToggle(balData);
+  const acntToggleList = () => acntFromBalanceForToggle(balData);
 
   return (
     <Box {...other}>
-      {allowFilter && (
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            paddingY: 1,
-          }}
-        >
-          <VkToggle
-            data={kantToggleList()}
-            dflt={knt}
-            label="Кантор"
-            limit={3}
-            fcb={(v) => setKnt(v)}
-          />
-          <VkToggle
-            data={acntToggleList()}
-            dflt={acnt}
-            label="Рахунок"
-            limit={3}
-            fcb={(v) => setAcnt(v)}
-          />
-        </Box>
-      )}
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingY: 1,
+        }}
+      >
+        <VkToggle
+          data={kantToggleList()}
+          dflt={knt}
+          label="Кантор"
+          limit={4}
+          fcb={(v) => setKnt(v)}
+        />
+        <VkToggle
+          data={acntToggleList()}
+          dflt={acnt}
+          label="Рахунок"
+          limit={4}
+          fcb={(v) => setAcnt(v)}
+        />
+      </Box>
 
       <BalanceTable data={dataset} />
     </Box>
@@ -140,11 +236,11 @@ export const BalanceComponent = ({
 
 export const BalanceTable = ({
   data,
-  showHeader = false,
+  // showHeader = false,
   ...other
 }: {
-  data: DbBalanceType[];
-  showHeader?: boolean;
+  data: BalanceRowType[];
+  // showHeader?: boolean;
 } & TableContainerProps) => {
   const dataset = transformBalanceForTable(data);
   return (
@@ -158,7 +254,7 @@ export const BalanceTable = ({
           //   tableLayout: 'fixed', // (опційно) змушує колонки підлаштовуватися під 100%
         }}
       >
-        {showHeader && (
+        {false && (
           <TableHead>
             <TableRow>
               <TableCell>
@@ -189,7 +285,7 @@ export const BalanceTable = ({
   );
 };
 
-const BalanceRow = ({ row }: { row: BalanceRowType }) => {
+const BalanceRow = ({ row }: { row: BalanceObjRowType }) => {
   const [open, setOpen] = useState(false);
   const shft = useUserStore((state) => state.lastShift);
   return (
@@ -235,7 +331,7 @@ const BalanceRow = ({ row }: { row: BalanceRowType }) => {
           align="right"
           sx={{ color: hue(row.maxTime, shft, row.totalAmount) }}
         >
-          {Math.abs(row.totalAmount).toLocaleString()}
+          {Math.round(Math.abs(row.totalAmount)).toLocaleString()}
         </TableCell>
         <TableCell
           align="right"
@@ -245,8 +341,8 @@ const BalanceRow = ({ row }: { row: BalanceRowType }) => {
           }}
         >
           <div style={{ fontSize: '90%' }}>
-            <div>{row.income.toLocaleString()}</div>
-            <div>{row.outcome.toLocaleString()}</div>
+            <div>{Math.round(row.income).toLocaleString()}</div>
+            <div>{Math.round(row.outcome).toLocaleString()}</div>
           </div>
         </TableCell>
         <TableCell
@@ -297,9 +393,12 @@ const BalanceRow = ({ row }: { row: BalanceRowType }) => {
                         color: hue(detail.tm, shft, detail.amnt),
                       }}
                     >
-                      {Math.abs(detail.amnt).toLocaleString('uk-UA', {
-                        maximumFractionDigits: 0,
-                      })}
+                      {Math.round(Math.abs(detail.amnt)).toLocaleString(
+                        'uk-UA',
+                        {
+                          maximumFractionDigits: 0,
+                        },
+                      )}
                     </TableCell>
                     <TableCell
                       align="right"
@@ -309,8 +408,8 @@ const BalanceRow = ({ row }: { row: BalanceRowType }) => {
                       }}
                     >
                       <div style={{ fontSize: '90%' }}>
-                        <div>{detail.turndbt.toLocaleString()}</div>
-                        <div>{detail.turncdt.toLocaleString()}</div>
+                        <div>{Math.round(detail.turndbt).toLocaleString()}</div>
+                        <div>{Math.round(detail.turncdt).toLocaleString()}</div>
                       </div>
                     </TableCell>
                     <TableCell

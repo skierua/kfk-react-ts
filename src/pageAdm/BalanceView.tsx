@@ -4,7 +4,7 @@ import Box, { type BoxProps } from '@mui/material/Box';
 import { BalanceComponent } from '../share/Balance';
 import { VkToggle } from '../share/VkToggle';
 import { useUserStore } from '../store/useUserStore';
-import { balanceDataset } from '../lib/balance';
+// import { balanceDataset } from '../lib/balance';
 
 const ROLE_MENUS: Record<string, { name: string; id: string }[]> = {
   owner: [
@@ -24,7 +24,7 @@ const ROLE_MENUS: Record<string, { name: string; id: string }[]> = {
 };
 
 export const BalanceView = ({ ...other }: BoxProps) => {
-  const { appUser, balance } = useUserStore();
+  const { appUser } = useUserStore();
   const [bal, setBal] = useState('');
 
   const balToggleList = useMemo(() => {
@@ -36,22 +36,6 @@ export const BalanceView = ({ ...other }: BoxProps) => {
       setBal(balToggleList[0].id);
     }
   }, [balToggleList, bal]);
-
-  const dataset = useMemo(() => {
-    if (!bal) return [];
-
-    const raw = balanceDataset({ data: balance, bal });
-
-    // Захист: касири бачать ТІЛЬКИ свій термінал на цих рахунках
-    const restrictedAccounts = ['3000', '3002', '36', '42'];
-    const isOwner = appUser?.role === 'owner';
-
-    if (appUser && !isOwner && restrictedAccounts.includes(bal)) {
-      return raw.filter((v) => v.shop === appUser.term);
-    }
-
-    return raw;
-  }, [balance, bal]);
 
   return (
     <Box
@@ -71,7 +55,7 @@ export const BalanceView = ({ ...other }: BoxProps) => {
       <Box className="adm-dash-container-title-wrapper">
         <Box className="adm-dash-container-title">Balance</Box>
       </Box>
-      <BalanceComponent data={dataset} />
+      <BalanceComponent balAcnt={bal} activeOnly={false} />
     </Box>
   );
 };

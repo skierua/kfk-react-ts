@@ -56,6 +56,16 @@ export interface DbDayCurRsltType {
 }
 
 export interface DbBalanceType {
+  acntno: string;
+  atclcode: string;
+  amnt: number;
+  turndbt: number;
+  turncdt: number;
+  shop: string;
+  tm: string;
+}
+
+export interface _DbBalanceType {
   acntno: string; // "3000"
   amnt: number; // "15100"
   chid: string; // "CZK"
@@ -85,6 +95,11 @@ export interface DbCurrencySubType {
   atclcode: string; // "840"
   id: string; //""
   sname: string; //"$100 син"
+}
+
+export interface DbShopType {
+  name: string;
+  so: number;
 }
 
 // agregate document type
